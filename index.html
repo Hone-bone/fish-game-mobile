@@ -26,6 +26,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
     <!-- Hammer.js タッチ操作用 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+
+    <script>
+      // 最初に読み込むスクリプト
+      window.onload = function () {
+        console.log("Window onload");
+        const startButton = document.getElementById("start-button");
+        if (startButton) {
+          startButton.onclick = function () {
+            console.log("インラインボタンクリック");
+          };
+        }
+      };
+    </script>
   </head>
   <body>
     <!-- 端末の向き通知 -->
@@ -52,7 +65,12 @@
       </div>
 
       <div class="game-controls">
-        <button id="start-button">ゲームスタート</button>
+        <button
+          id="start-button"
+          onclick="console.log('直接クリック'); window.gameStart && window.gameStart();"
+        >
+          ゲームスタート
+        </button>
         <div class="instructions">
           <h3>遊び方</h3>
           <p>
@@ -68,7 +86,12 @@
         <div class="game-over-content animate__animated animate__zoomIn">
           <h2>ゲーム終了!</h2>
           <p>最終スコア: <span id="final-score">0</span></p>
-          <button id="restart-button">もう一度プレイ</button>
+          <button
+            id="restart-button"
+            onclick="window.gameStart && window.gameStart();"
+          >
+            もう一度プレイ
+          </button>
           <button id="share-button">結果をシェア</button>
         </div>
       </div>
