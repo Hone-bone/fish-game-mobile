@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="130" height="80" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <!-- 金魚の体のグラデーション -->
+    <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#333333;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#111111;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- 尾びれのグラデーション -->
+    <linearGradient id="tailGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#333333;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- 出目のグラデーション -->
+    <radialGradient id="bubbleGradient" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+      <stop offset="0%" style="stop-color:#555555;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#222222;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- 光沢効果 -->
+    <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur" />
+      <feOffset in="blur" dx="0" dy="0" result="offsetBlur" />
+      <feSpecularLighting in="blur" surfaceScale="5" specularConstant="0.8" 
+                          specularExponent="15" lighting-color="#ffffff" result="specOut">
+        <fePointLight x="50" y="20" z="50" />
+      </feSpecularLighting>
+      <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut" />
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" result="lit" />
+    </filter>
+    
+    <!-- 水泡効果 -->
+    <filter id="bubbleEffect" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
+      <feSpecularLighting in="blur" surfaceScale="5" specularConstant="1.2" 
+                          specularExponent="20" lighting-color="#ffffff" result="specOut">
+        <fePointLight x="30" y="30" z="50" />
+      </feSpecularLighting>
+      <feComposite in="specOut" in2="SourceAlpha" operator="in" result="specOut" />
+      <feComposite in="SourceGraphic" in2="specOut" operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+    </filter>
+    
+    <!-- うろこパターン -->
+    <pattern id="scalePattern" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+      <path d="M 0,0 C 4,0 8,4 8,8 C 8,4 4,0 0,0 z" fill="#444444" opacity="0.15" />
+    </pattern>
+  </defs>
+  
+  <!-- 金魚の尾びれ -->
+  <g transform="translate(0, 40)">
+    <path d="M 50,0 C 35,-25 5,-15 20,0 C 5,15 35,25 50,0 Z" fill="url(#tailGradient)" />
+    <path d="M 45,0 C 25,-20 -5,-10 15,0 C -5,10 25,20 45,0 Z" fill="url(#tailGradient)" />
+  </g>
+  
+  <!-- 金魚の体 -->
+  <ellipse cx="75" cy="40" rx="45" ry="30" fill="url(#bodyGradient)" filter="url(#glowFilter)" />
+  <ellipse cx="75" cy="40" rx="45" ry="30" fill="url(#scalePattern)" />
+  
+  <!-- 出目 -->
+  <g filter="url(#bubbleEffect)">
+    <circle cx="95" cy="25" r="12" fill="url(#bubbleGradient)" stroke="#000000" stroke-width="0.5" />
+    <circle cx="95" cy="55" r="12" fill="url(#bubbleGradient)" stroke="#000000" stroke-width="0.5" />
+  </g>
+  
+  <!-- 目 -->
+  <circle cx="100" cy="25" r="5" fill="white" />
+  <circle cx="100" cy="25" r="3" fill="black" />
+  <circle cx="98" cy="23" r="1" fill="white" />
+  
+  <circle cx="100" cy="55" r="5" fill="white" />
+  <circle cx="100" cy="55" r="3" fill="black" />
+  <circle cx="98" cy="53" r="1" fill="white" />
+  
+  <!-- 胸びれ -->
+  <path d="M 65,58 C 70,65 75,70 80,65 C 75,60 70,55 65,58" fill="#333333" opacity="0.9" />
+  <path d="M 65,22 C 70,15 75,10 80,15 C 75,20 70,25 65,22" fill="#333333" opacity="0.9" />
+  
+  <!-- 背びれ -->
+  <path d="M 70,10 C 75,5 85,5 80,15 C 75,20 65,15 70,10" fill="#333333" />
+  
+  <!-- 光沢 -->
+  <ellipse cx="65" cy="30" rx="15" ry="8" fill="white" opacity="0.15" />
+  
+  <!-- 気泡 -->
+  <circle cx="115" cy="20" r="2.5" fill="white" opacity="0.6" />
+  <circle cx="120" cy="15" r="1.5" fill="white" opacity="0.6" />
+  <circle cx="118" cy="25" r="1" fill="white" opacity="0.6" />
+</svg> 
