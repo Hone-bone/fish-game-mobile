@@ -111,6 +111,54 @@ document.addEventListener("DOMContentLoaded", () => {
     devicePixelRatio: window.devicePixelRatio || 1,
   };
 
+  // 魚の種類の定義
+  const fishTypes = [
+    {
+      color: "red",
+      speed: 2,
+      size: 30,
+      points: 10,
+      probability: 0.5,
+      image: "assets/fish1.svg",
+    },
+    {
+      color: "gold",
+      speed: 3,
+      size: 25,
+      points: 20,
+      probability: 0.3,
+      image: "assets/fish2.svg",
+    },
+    {
+      color: "blue",
+      speed: 4,
+      size: 20,
+      points: 30,
+      probability: 0.15,
+      image: "assets/fish3.svg",
+    },
+    {
+      color: "black",
+      speed: 5,
+      size: 35,
+      points: 50,
+      probability: 0.05,
+      image: "assets/fish4.svg",
+    },
+  ];
+
+  // 魚の画像を事前に読み込む
+  const fishImages = {};
+
+  function preloadFishImages() {
+    fishTypes.forEach((type) => {
+      const img = new Image();
+      img.src = type.image;
+      fishImages[type.image] = img;
+      console.log(`魚の画像を読み込み: ${type.image}`);
+    });
+  }
+
   // タッチイベントの設定
   function setupTouchEvents() {
     // デバイスピクセル比率の取得
@@ -310,41 +358,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 金魚を生成
   function createFish() {
-    const fishTypes = [
-      {
-        color: "red",
-        speed: 2,
-        size: 30,
-        points: 10,
-        probability: 0.5,
-        image: "assets/fish1.svg",
-      },
-      {
-        color: "gold",
-        speed: 3,
-        size: 25,
-        points: 20,
-        probability: 0.3,
-        image: "assets/fish2.svg",
-      },
-      {
-        color: "blue",
-        speed: 4,
-        size: 20,
-        points: 30,
-        probability: 0.15,
-        image: "assets/fish3.svg",
-      },
-      {
-        color: "black",
-        speed: 5,
-        size: 35,
-        points: 50,
-        probability: 0.05,
-        image: "assets/fish4.svg",
-      },
-    ];
-
     // 現在の魚の数が多すぎないか確認
     if (gameState.fish.length >= 15) return;
 
@@ -400,7 +413,17 @@ document.addEventListener("DOMContentLoaded", () => {
       color: selectedFishType.color,
       points: selectedFishType.points,
       rotation: Math.atan2(directionY, directionX),
-      useDefaultColor: true, // 常にデフォルトカラーを使用
+      image: selectedFishType.image,
+      imageObj: fishImages[selectedFishType.image],
+      // 魚の自然な動きのためのパラメータ
+      wiggleOffset: Math.random() * Math.PI * 2, // ランダムなオフセット
+      wiggleSpeed: 0.05 + Math.random() * 0.05, // ランダムな揺れの速度
+      wiggleAmount: 0.3 + Math.random() * 0.3, // ランダムな揺れの量
+      acceleration: 0, // 加速度
+      maxSpeed: adjustedSpeed * 1.5, // 最大速度
+      minSpeed: adjustedSpeed * 0.7, // 最小速度
+      speedChangeInterval: 60 + Math.floor(Math.random() * 120), // 速度変更間隔（フレーム数）
+      frameCount: 0, // フレームカウンター
     };
 
     gameState.fish.push(fish);
@@ -409,20 +432,87 @@ document.addEventListener("DOMContentLoaded", () => {
   // 魚の更新
   function updateFish() {
     gameState.fish.forEach((fish) => {
+      // フレームカウンターを増加
+      fish.frameCount++;
+
+      // 一定間隔で速度変更（加速・減速）を行う
+      if (fish.frameCount % fish.speedChangeInterval === 0) {
+        // -0.05から0.05の間でランダムな加速度を設定
+        fish.acceleration = Math.random() * 0.1 - 0.05;
+      }
+
+      // 速度を更新（加速度を適用）
+      const currentSpeed =
+        Math.sqrt(
+          fish.directionX * fish.directionX + fish.directionY * fish.directionY
+        ) * fish.speed;
+      let newSpeed = currentSpeed + fish.acceleration;
+
+      // 速度の上限と下限を設定
+      newSpeed = Math.max(fish.minSpeed, Math.min(fish.maxSpeed, newSpeed));
+
+      // 正規化した方向ベクトルに新しい速度を適用
+      const length = Math.sqrt(
+        fish.directionX * fish.directionX + fish.directionY * fish.directionY
+      );
+      if (length > 0) {
+        fish.directionX = (fish.directionX / length) * (newSpeed / fish.speed);
+        fish.directionY = (fish.directionY / length) * (newSpeed / fish.speed);
+      }
+
+      // 揺れる動きの計算
+      const wiggle =
+        Math.sin(fish.frameCount * fish.wiggleSpeed + fish.wiggleOffset) *
+        fish.wiggleAmount;
+
+      // 魚の向きを計算（ベースの方向 + 揺れ）
+      const baseAngle = Math.atan2(fish.directionY, fish.directionX);
+      fish.rotation = baseAngle + wiggle;
+
+      // 実際の移動方向を計算（揺れを含める）
+      const moveAngle = baseAngle + wiggle * 0.3; // 揺れの影響を抑える
+      const effectiveSpeed = fish.speed;
+      const moveX = Math.cos(moveAngle) * effectiveSpeed;
+      const moveY = Math.sin(moveAngle) * effectiveSpeed;
+
       // 魚の移動
-      fish.x += fish.directionX * fish.speed;
-      fish.y += fish.directionY * fish.speed;
+      fish.x += moveX;
+      fish.y += moveY;
 
-      // キャンバスの端に到達したら向きを変える
-      if (fish.x <= 0 || fish.x >= canvas.width) {
-        fish.directionX *= -1;
-      }
-      if (fish.y <= 0 || fish.y >= canvas.height) {
-        fish.directionY *= -1;
+      // キャンバスの端に到達したら滑らかに方向を変える
+      const margin = fish.size;
+      if (fish.x <= margin || fish.x >= canvas.width - margin) {
+        // x方向の反転（徐々に）
+        fish.directionX *= -0.2; // 急な反転ではなく徐々に
+
+        // ランダムなy方向の変化を加える
+        fish.directionY += Math.random() * 0.4 - 0.2;
+
+        // 位置の調整（キャンバス内に戻す）
+        if (fish.x < margin) fish.x = margin;
+        if (fish.x > canvas.width - margin) fish.x = canvas.width - margin;
       }
 
-      // 回転角度の更新
-      fish.rotation = Math.atan2(fish.directionY, fish.directionX);
+      if (fish.y <= margin || fish.y >= canvas.height - margin) {
+        // y方向の反転（徐々に）
+        fish.directionY *= -0.2; // 急な反転ではなく徐々に
+
+        // ランダムなx方向の変化を加える
+        fish.directionX += Math.random() * 0.4 - 0.2;
+
+        // 位置の調整（キャンバス内に戻す）
+        if (fish.y < margin) fish.y = margin;
+        if (fish.y > canvas.height - margin) fish.y = canvas.height - margin;
+      }
+
+      // 方向ベクトルの正規化（一定の長さに保つ）
+      const newLength = Math.sqrt(
+        fish.directionX * fish.directionX + fish.directionY * fish.directionY
+      );
+      if (newLength > 0) {
+        fish.directionX = fish.directionX / newLength;
+        fish.directionY = fish.directionY / newLength;
+      }
     });
 
     // 一定の確率で新しい魚を追加
@@ -438,19 +528,27 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.translate(fish.x, fish.y);
       ctx.rotate(fish.rotation);
 
-      // 単色で描画
-      ctx.fillStyle = fish.color || "#ff6666";
-      ctx.beginPath();
-      ctx.ellipse(0, 0, fish.size / 2, fish.size / 4, 0, 0, Math.PI * 2);
-      ctx.fill();
+      // SVG画像を使用して描画
+      if (fish.image && fish.imageObj) {
+        // 魚のサイズに合わせてスケーリング（中心を基準に）
+        const width = fish.size * 2;
+        const height = fish.size;
+        ctx.drawImage(fish.imageObj, -width / 2, -height / 2, width, height);
+      } else {
+        // 画像が読み込まれていない場合のフォールバック
+        ctx.fillStyle = fish.color || "#ff6666";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, fish.size / 2, fish.size / 4, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-      // 尾びれ
-      ctx.beginPath();
-      ctx.moveTo(fish.size / 2, 0);
-      ctx.lineTo(fish.size, fish.size / 4);
-      ctx.lineTo(fish.size, -fish.size / 4);
-      ctx.closePath();
-      ctx.fill();
+        // 尾びれ
+        ctx.beginPath();
+        ctx.moveTo(fish.size / 2, 0);
+        ctx.lineTo(fish.size, fish.size / 4);
+        ctx.lineTo(fish.size, -fish.size / 4);
+        ctx.closePath();
+        ctx.fill();
+      }
 
       ctx.restore();
     });
@@ -691,6 +789,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setupTouchEvents();
     setupEventListeners();
+
+    // 魚の画像を事前に読み込む
+    preloadFishImages();
 
     // ゲーム画面の初期描画
     drawWaterPattern();
