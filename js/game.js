@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM読み込み完了");
   // ゲーム要素の取得
   const canvas = document.getElementById("game-canvas");
   const ctx = canvas.getContext("2d");
@@ -12,6 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const finalScoreElement = document.getElementById("final-score");
   const restartButton = document.getElementById("restart-button");
   const shareButton = document.getElementById("share-button");
+
+  console.log("要素取得完了", { startButton, poiElement, canvas });
 
   // キャンバスサイズの設定
   function resizeCanvas() {
@@ -30,33 +33,57 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("resize", resizeCanvas);
   resizeCanvas();
 
-  // 音声効果
-  const sounds = {
-    catch: new Howl({
-      src: ["assets/sounds/catch.mp3"],
-      volume: 0.5,
-    }),
-    splash: new Howl({
-      src: ["assets/sounds/splash.mp3"],
-      volume: 0.5,
-    }),
-    start: new Howl({
-      src: ["assets/sounds/start.mp3"],
-      volume: 0.5,
-    }),
-    gameover: new Howl({
-      src: ["assets/sounds/gameover.mp3"],
-      volume: 0.5,
-    }),
-    poiBreak: new Howl({
-      src: ["assets/sounds/poi_break.mp3"],
-      volume: 0.5,
-    }),
-    timeWarning: new Howl({
-      src: ["assets/sounds/time_warning.mp3"],
-      volume: 0.5,
-    }),
+  // 音声効果 - 空のダミー関数を用意
+  let dummySound = {
+    play: () => console.log("サウンド再生（ダミー）"),
   };
+
+  // 音声効果を初期化
+  let sounds = {
+    catch: dummySound,
+    splash: dummySound,
+    start: dummySound,
+    gameover: dummySound,
+    poiBreak: dummySound,
+    timeWarning: dummySound,
+  };
+
+  // サウンドの読み込みを試みる
+  try {
+    if (typeof Howl !== "undefined") {
+      sounds = {
+        catch: new Howl({
+          src: ["assets/sounds/catch.mp3"],
+          volume: 0.5,
+        }),
+        splash: new Howl({
+          src: ["assets/sounds/splash.mp3"],
+          volume: 0.5,
+        }),
+        start: new Howl({
+          src: ["assets/sounds/start.mp3"],
+          volume: 0.5,
+        }),
+        gameover: new Howl({
+          src: ["assets/sounds/gameover.mp3"],
+          volume: 0.5,
+        }),
+        poiBreak: new Howl({
+          src: ["assets/sounds/poi_break.mp3"],
+          volume: 0.5,
+        }),
+        timeWarning: new Howl({
+          src: ["assets/sounds/time_warning.mp3"],
+          volume: 0.5,
+        }),
+      };
+      console.log("サウンド初期化成功");
+    } else {
+      console.warn("Howlライブラリが見つかりません");
+    }
+  } catch (err) {
+    console.error("サウンド初期化エラー:", err);
+  }
 
   // ゲーム状態
   let gameState = {
@@ -80,42 +107,51 @@ document.addEventListener("DOMContentLoaded", () => {
     // デバイスピクセル比率の取得
     gameState.devicePixelRatio = window.devicePixelRatio || 1;
 
-    // Hammer.jsでタッチ操作を設定
-    const hammer = new Hammer(canvas);
-    hammer.get("pan").set({ direction: Hammer.DIRECTION_ALL });
+    try {
+      // Hammer.jsでタッチ操作を設定
+      if (typeof Hammer !== "undefined") {
+        const hammer = new Hammer(canvas);
+        hammer.get("pan").set({ direction: Hammer.DIRECTION_ALL });
 
-    hammer.on("panstart", (e) => {
-      if (!gameState.isPlaying || gameState.poiBroken) return;
-      const rect = canvas.getBoundingClientRect();
-      updatePoiPosition(e.center.x - rect.left, e.center.y - rect.top);
-      poiContainer.style.display = "block";
-    });
+        hammer.on("panstart", (e) => {
+          if (!gameState.isPlaying || gameState.poiBroken) return;
+          const rect = canvas.getBoundingClientRect();
+          updatePoiPosition(e.center.x - rect.left, e.center.y - rect.top);
+          poiContainer.style.display = "block";
+        });
 
-    hammer.on("panmove", (e) => {
-      if (!gameState.isPlaying || gameState.poiBroken) return;
-      const rect = canvas.getBoundingClientRect();
-      updatePoiPosition(e.center.x - rect.left, e.center.y - rect.top);
-    });
+        hammer.on("panmove", (e) => {
+          if (!gameState.isPlaying || gameState.poiBroken) return;
+          const rect = canvas.getBoundingClientRect();
+          updatePoiPosition(e.center.x - rect.left, e.center.y - rect.top);
+        });
 
-    hammer.on("panend", (e) => {
-      if (!gameState.isPlaying || gameState.poiBroken) return;
-      const rect = canvas.getBoundingClientRect();
-      catchFish(e.center.x - rect.left, e.center.y - rect.top);
-      poiContainer.style.display = "none";
-      createSplash(e.center.x - rect.left, e.center.y - rect.top);
-    });
+        hammer.on("panend", (e) => {
+          if (!gameState.isPlaying || gameState.poiBroken) return;
+          const rect = canvas.getBoundingClientRect();
+          catchFish(e.center.x - rect.left, e.center.y - rect.top);
+          poiContainer.style.display = "none";
+          createSplash(e.center.x - rect.left, e.center.y - rect.top);
+        });
 
-    hammer.on("tap", (e) => {
-      if (!gameState.isPlaying || gameState.poiBroken) return;
-      const rect = canvas.getBoundingClientRect();
-      updatePoiPosition(e.center.x - rect.left, e.center.y - rect.top);
-      poiContainer.style.display = "block";
-      setTimeout(() => {
-        catchFish(e.center.x - rect.left, e.center.y - rect.top);
-        poiContainer.style.display = "none";
-        createSplash(e.center.x - rect.left, e.center.y - rect.top);
-      }, 100);
-    });
+        hammer.on("tap", (e) => {
+          if (!gameState.isPlaying || gameState.poiBroken) return;
+          const rect = canvas.getBoundingClientRect();
+          updatePoiPosition(e.center.x - rect.left, e.center.y - rect.top);
+          poiContainer.style.display = "block";
+          setTimeout(() => {
+            catchFish(e.center.x - rect.left, e.center.y - rect.top);
+            poiContainer.style.display = "none";
+            createSplash(e.center.x - rect.left, e.center.y - rect.top);
+          }, 100);
+        });
+        console.log("Hammer.jsイベント設定完了");
+      } else {
+        console.warn("Hammer.jsライブラリが見つかりません");
+      }
+    } catch (err) {
+      console.error("Hammer.js設定エラー:", err);
+    }
 
     // マウスイベント（デスクトップ用）
     canvas.addEventListener("mousedown", (e) => {
@@ -143,6 +179,8 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("orientationchange", () => {
       setTimeout(resizeCanvas, 300); // 向き変更後に少し遅延させてサイズを調整
     });
+
+    console.log("マウスイベント設定完了");
   }
 
   // ポイの位置を更新
@@ -157,7 +195,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function catchFish(x, y) {
     if (gameState.poiBroken) return;
 
-    sounds.splash.play();
+    try {
+      sounds.splash.play();
+    } catch (e) {
+      console.error("サウンド再生エラー:", e);
+    }
 
     // ポイの使用回数を増やす
     gameState.poiCatchAttempts++;
@@ -206,7 +248,11 @@ document.addEventListener("DOMContentLoaded", () => {
         gameState.fish.splice(index, 1);
 
         // 効果音
-        sounds.catch.play();
+        try {
+          sounds.catch.play();
+        } catch (e) {
+          console.error("サウンド再生エラー:", e);
+        }
 
         // 魚を捕まえたら新しい魚を追加
         createFish();
@@ -219,7 +265,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // ポイが壊れる
   function breakPoi() {
     gameState.poiBroken = true;
-    sounds.poiBreak.play();
+    try {
+      sounds.poiBreak.play();
+    } catch (e) {
+      console.error("サウンド再生エラー:", e);
+    }
 
     // 壊れたポイの画像に変更
     poiElement.src = "assets/broken-poi.svg";
@@ -277,7 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
         size: 30,
         points: 10,
         probability: 0.5,
-        image: "assets/fish-red.svg",
+        image: "assets/fish1.svg",
       },
       {
         color: "gold",
@@ -285,7 +335,7 @@ document.addEventListener("DOMContentLoaded", () => {
         size: 25,
         points: 20,
         probability: 0.3,
-        image: "assets/fish-gold.svg",
+        image: "assets/fish2.svg",
       },
       {
         color: "blue",
@@ -293,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
         size: 20,
         points: 30,
         probability: 0.15,
-        image: "assets/fish-blue.svg",
+        image: "assets/fish3.svg",
       },
       {
         color: "black",
@@ -301,7 +351,7 @@ document.addEventListener("DOMContentLoaded", () => {
         size: 35,
         points: 50,
         probability: 0.05,
-        image: "assets/fish-black.svg",
+        image: "assets/fish4.svg",
       },
     ];
 
@@ -366,6 +416,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 画像の読み込み
     fish.img.src = fish.image;
+    fish.img.onerror = () => {
+      console.error(`魚の画像の読み込みに失敗しました: ${fish.image}`);
+      // エラー時はデフォルトの色を使用
+      fish.useDefaultColor = true;
+    };
+    fish.img.onload = () => {
+      console.log(`魚の画像を読み込みました: ${fish.image}`);
+    };
     gameState.fish.push(fish);
   }
 
@@ -400,13 +458,37 @@ document.addEventListener("DOMContentLoaded", () => {
       ctx.save();
       ctx.translate(fish.x, fish.y);
       ctx.rotate(fish.rotation);
-      ctx.drawImage(
-        fish.img,
-        -fish.size / 2,
-        -fish.size / 2,
-        fish.size,
-        fish.size
-      );
+
+      if (fish.useDefaultColor) {
+        // 画像がロードできなかった場合は単色で描画
+        ctx.fillStyle = fish.color || "#ff6666";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, fish.size / 2, fish.size / 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 尾びれ
+        ctx.beginPath();
+        ctx.moveTo(fish.size / 2, 0);
+        ctx.lineTo(fish.size, fish.size / 4);
+        ctx.lineTo(fish.size, -fish.size / 4);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // 画像がある場合は画像を描画
+        try {
+          ctx.drawImage(
+            fish.img,
+            -fish.size / 2,
+            -fish.size / 2,
+            fish.size,
+            fish.size
+          );
+        } catch (e) {
+          console.error("魚の描画エラー:", e);
+          fish.useDefaultColor = true;
+        }
+      }
+
       ctx.restore();
     });
   }
@@ -479,7 +561,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (gameState.timeRemaining <= 10 && !gameState.isTimeWarning) {
       gameState.isTimeWarning = true;
       timerElement.parentElement.classList.add("time-warning");
-      sounds.timeWarning.play();
+      try {
+        sounds.timeWarning.play();
+      } catch (e) {
+        console.error("サウンド再生エラー:", e);
+      }
     }
 
     if (gameState.timeRemaining <= 0) {
@@ -489,6 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ゲーム開始
   function startGame() {
+    console.log("ゲーム開始");
     // 初期化
     gameState.isPlaying = true;
     gameState.score = 0;
@@ -517,7 +604,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector(".instructions").style.display = "none";
 
     // 効果音
-    sounds.start.play();
+    try {
+      sounds.start.play();
+    } catch (e) {
+      console.error("サウンド再生エラー:", e);
+    }
 
     // 初期の魚を生成
     for (let i = 0; i < 5; i++) {
@@ -538,7 +629,11 @@ document.addEventListener("DOMContentLoaded", () => {
     clearInterval(gameState.timeInterval);
 
     // 効果音
-    sounds.gameover.play();
+    try {
+      sounds.gameover.play();
+    } catch (e) {
+      console.error("サウンド再生エラー:", e);
+    }
 
     // 最終スコアの表示
     finalScoreElement.textContent = gameState.score;
@@ -596,6 +691,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // イベントリスナーの設定
   function setupEventListeners() {
+    console.log("イベントリスナー設定開始");
     startButton.addEventListener("click", startGame);
     restartButton.addEventListener("click", startGame);
 
@@ -628,10 +724,12 @@ document.addEventListener("DOMContentLoaded", () => {
         gameState.timeInterval = setInterval(updateTimer, 1000);
       }
     });
+    console.log("イベントリスナー設定完了");
   }
 
   // 初期化
   function init() {
+    console.log("初期化開始");
     setupTouchEvents();
     setupEventListeners();
 
@@ -639,10 +737,14 @@ document.addEventListener("DOMContentLoaded", () => {
     drawWaterPattern();
 
     // モバイルデバイスの向きチェック
-    if (window.orientation === 90 || window.orientation === -90) {
-      const orientationMessage = document.getElementById("orientation-message");
-      if (orientationMessage) {
-        orientationMessage.style.display = "flex";
+    if (window.orientation !== undefined) {
+      if (window.orientation === 90 || window.orientation === -90) {
+        const orientationMessage = document.getElementById(
+          "orientation-message"
+        );
+        if (orientationMessage) {
+          orientationMessage.style.display = "flex";
+        }
       }
     }
 
@@ -656,6 +758,7 @@ document.addEventListener("DOMContentLoaded", () => {
       },
       { passive: false }
     );
+    console.log("初期化完了");
   }
 
   // ゲームの初期化
