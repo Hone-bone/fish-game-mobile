@@ -2,9 +2,9 @@
   "name": "金魚すくいゲーム",
   "short_name": "金魚すくい",
   "description": "制限時間内にたくさんの金魚をすくってスコアを競おう！",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "background_color": "#5ea6df",
   "theme_color": "#5ea6df",
   "orientation": "portrait",
   "icons": [
@@ -19,6 +19,11 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "assets/app-icon.png",
+      "sizes": "256x256",
+      "type": "image/png"
     }
   ]
 }

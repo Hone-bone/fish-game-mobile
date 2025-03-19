@@ -18,6 +18,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const gameArea = document.querySelector(".game-area");
     canvas.width = gameArea.offsetWidth;
     canvas.height = gameArea.offsetHeight;
+
+    // 既に魚が描画されていれば再描画する
+    if (gameState.isPlaying) {
+      drawWaterPattern();
+      drawFish();
+    }
   }
 
   // 初期画面サイズの設定
@@ -46,6 +52,10 @@ document.addEventListener("DOMContentLoaded", () => {
       src: ["assets/sounds/poi_break.mp3"],
       volume: 0.5,
     }),
+    timeWarning: new Howl({
+      src: ["assets/sounds/time_warning.mp3"],
+      volume: 0.5,
+    }),
   };
 
   // ゲーム状態
@@ -61,10 +71,15 @@ document.addEventListener("DOMContentLoaded", () => {
     poiMaxCatchAttempts: 5,
     poiCatchAttempts: 0,
     poiBroken: false,
+    isTimeWarning: false,
+    devicePixelRatio: window.devicePixelRatio || 1,
   };
 
   // タッチイベントの設定
   function setupTouchEvents() {
+    // デバイスピクセル比率の取得
+    gameState.devicePixelRatio = window.devicePixelRatio || 1;
+
     // Hammer.jsでタッチ操作を設定
     const hammer = new Hammer(canvas);
     hammer.get("pan").set({ direction: Hammer.DIRECTION_ALL });
@@ -123,6 +138,11 @@ document.addEventListener("DOMContentLoaded", () => {
       poiContainer.style.display = "none";
       createSplash(e.clientX - rect.left, e.clientY - rect.top);
     });
+
+    // スクリーン向きの変更を監視
+    window.addEventListener("orientationchange", () => {
+      setTimeout(resizeCanvas, 300); // 向き変更後に少し遅延させてサイズを調整
+    });
   }
 
   // ポイの位置を更新
@@ -165,7 +185,10 @@ document.addEventListener("DOMContentLoaded", () => {
         Math.pow(fish.x - x, 2) + Math.pow(fish.y - y, 2)
       );
 
-      if (distance < 40) {
+      // 捕獲判定の調整（モバイル端末では少し捕まえやすくする）
+      const catchRadius = window.innerWidth <= 480 ? 45 : 40;
+
+      if (distance < catchRadius) {
         // ポイのサイズと魚のサイズを考慮した捕獲範囲
         caught = true;
         // スコア加算
@@ -184,6 +207,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 効果音
         sounds.catch.play();
+
+        // 魚を捕まえたら新しい魚を追加
+        createFish();
       }
     });
 
@@ -248,189 +274,199 @@ document.addEventListener("DOMContentLoaded", () => {
       {
         color: "red",
         speed: 2,
-        points: 10,
         size: 30,
-        image: "assets/fish1.svg",
-      },
-      {
-        color: "orange",
-        speed: 3,
-        points: 20,
-        size: 25,
-        image: "assets/fish2.svg",
-      },
-      {
-        color: "white",
-        speed: 4,
-        points: 30,
-        size: 20,
-        image: "assets/fish3.svg",
+        points: 10,
+        probability: 0.5,
+        image: "assets/fish-red.svg",
       },
       {
         color: "gold",
+        speed: 3,
+        size: 25,
+        points: 20,
+        probability: 0.3,
+        image: "assets/fish-gold.svg",
+      },
+      {
+        color: "blue",
+        speed: 4,
+        size: 20,
+        points: 30,
+        probability: 0.15,
+        image: "assets/fish-blue.svg",
+      },
+      {
+        color: "black",
         speed: 5,
+        size: 35,
         points: 50,
-        size: 15,
-        image: "assets/fish4.svg",
+        probability: 0.05,
+        image: "assets/fish-black.svg",
       },
     ];
 
-    // ランダムな魚のタイプを選択
-    const fishType = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+    // 現在の魚の数が多すぎないか確認
+    if (gameState.fish.length >= 15) return;
 
-    // 魚の初期位置（画面外から入ってくる）
-    const side = Math.floor(Math.random() * 4); // 0: 上, 1: 右, 2: 下, 3: 左
-    let x, y, angle;
+    // 魚の種類をランダムに選択
+    let random = Math.random();
+    let selectedFishType = fishTypes[0]; // デフォルトは赤い金魚
 
-    switch (side) {
-      case 0: // 上
-        x = Math.random() * canvas.width;
-        y = -fishType.size;
-        angle = Math.PI * 0.5 + (Math.random() * 0.5 - 0.25);
+    let probabilitySum = 0;
+    for (let type of fishTypes) {
+      probabilitySum += type.probability;
+      if (random <= probabilitySum) {
+        selectedFishType = type;
         break;
-      case 1: // 右
-        x = canvas.width + fishType.size;
-        y = Math.random() * canvas.height;
-        angle = Math.PI + (Math.random() * 0.5 - 0.25);
-        break;
-      case 2: // 下
-        x = Math.random() * canvas.width;
-        y = canvas.height + fishType.size;
-        angle = Math.PI * 1.5 + (Math.random() * 0.5 - 0.25);
-        break;
-      case 3: // 左
-        x = -fishType.size;
-        y = Math.random() * canvas.height;
-        angle = 0 + (Math.random() * 0.5 - 0.25);
-        break;
+      }
     }
 
-    // 魚オブジェクトを作成
+    // スマホ画面サイズに合わせた設定
+    const isMobile = window.innerWidth <= 480;
+    const adjustedSize = isMobile
+      ? selectedFishType.size * 0.9
+      : selectedFishType.size;
+    const adjustedSpeed = isMobile
+      ? selectedFishType.speed * 1.1
+      : selectedFishType.speed;
+
+    // 魚の開始位置（キャンバスの端からランダム）
+    const startFromSide = Math.random() > 0.5;
+    let x, y;
+    let directionX, directionY;
+
+    if (startFromSide) {
+      // 左右のいずれかから開始
+      x = Math.random() > 0.5 ? 0 : canvas.width;
+      y = Math.random() * canvas.height;
+      directionX = x === 0 ? 1 : -1;
+      directionY = Math.random() * 2 - 1;
+    } else {
+      // 上下のいずれかから開始
+      x = Math.random() * canvas.width;
+      y = Math.random() > 0.5 ? 0 : canvas.height;
+      directionX = Math.random() * 2 - 1;
+      directionY = y === 0 ? 1 : -1;
+    }
+
+    // 魚オブジェクトの作成
     const fish = {
-      ...fishType,
       x,
       y,
-      angle,
-      // 泳ぎをより自然にするための細かいパラメータ
-      wiggle: 0,
-      wiggleSpeed: 0.1 + Math.random() * 0.1,
-      wiggleAmount: 0.2 + Math.random() * 0.2,
-      // 方向転換のパラメータ
-      turnChance: 0.01,
-      turnAmount: 0.5,
+      size: adjustedSize,
+      speed: adjustedSpeed,
+      directionX,
+      directionY,
+      color: selectedFishType.color,
+      points: selectedFishType.points,
+      rotation: Math.atan2(directionY, directionX),
+      image: selectedFishType.image,
+      img: new Image(),
     };
 
-    // 魚を配列に追加
+    // 画像の読み込み
+    fish.img.src = fish.image;
     gameState.fish.push(fish);
   }
 
-  // 金魚の更新
+  // 魚の更新
   function updateFish() {
-    gameState.fish.forEach((fish, index) => {
-      // 魚の位置を更新
-      if (Math.random() < fish.turnChance) {
-        fish.angle += (Math.random() * 2 - 1) * fish.turnAmount;
-      }
-
-      // ウィグル（魚の泳ぎをより自然に）
-      fish.wiggle += fish.wiggleSpeed;
-      const wiggleAngle = Math.sin(fish.wiggle) * fish.wiggleAmount;
-
+    gameState.fish.forEach((fish) => {
       // 魚の移動
-      fish.x += Math.cos(fish.angle + wiggleAngle) * fish.speed;
-      fish.y += Math.sin(fish.angle + wiggleAngle) * fish.speed;
+      fish.x += fish.directionX * fish.speed;
+      fish.y += fish.directionY * fish.speed;
 
-      // 画面外に出た魚を削除
-      if (
-        fish.x < -50 ||
-        fish.x > canvas.width + 50 ||
-        fish.y < -50 ||
-        fish.y > canvas.height + 50
-      ) {
-        gameState.fish.splice(index, 1);
+      // キャンバスの端に到達したら向きを変える
+      if (fish.x <= 0 || fish.x >= canvas.width) {
+        fish.directionX *= -1;
       }
+      if (fish.y <= 0 || fish.y >= canvas.height) {
+        fish.directionY *= -1;
+      }
+
+      // 回転角度の更新
+      fish.rotation = Math.atan2(fish.directionY, fish.directionX);
     });
+
+    // 一定の確率で新しい魚を追加
+    if (Math.random() < 0.02 && gameState.fish.length < 15) {
+      createFish();
+    }
   }
 
   // 魚の描画
   function drawFish() {
     gameState.fish.forEach((fish) => {
       ctx.save();
-
-      // 魚の位置に移動して回転
       ctx.translate(fish.x, fish.y);
-      ctx.rotate(fish.angle + Math.PI * 0.5);
-
-      // 魚の画像があればそれを使用
-      const fishImage = new Image();
-      fishImage.src = fish.image;
+      ctx.rotate(fish.rotation);
       ctx.drawImage(
-        fishImage,
+        fish.img,
         -fish.size / 2,
         -fish.size / 2,
         fish.size,
         fish.size
       );
-
       ctx.restore();
     });
   }
 
-  // 水面のパターン描画
+  // 水の背景描画
   function drawWaterPattern() {
-    // 水の背景
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, "#5ea6df");
-    gradient.addColorStop(1, "#4a86e8");
+    // キャンバスをクリア
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = gradient;
+    // 青い背景
+    ctx.fillStyle = "#5ea6df";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 水面の波紋パターン
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
-    ctx.lineWidth = 1;
+    // 水の波紋パターン
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    for (let i = 0; i < 5; i++) {
+      const radius = 50 + i * 40;
+      const offset = (Date.now() / 1000) % 5;
 
-    const time = Date.now() * 0.001;
-    const waveCount = 5;
-    const waveSpacing = canvas.height / waveCount;
-
-    for (let i = 0; i < waveCount; i++) {
       ctx.beginPath();
-
-      for (let x = 0; x <= canvas.width; x += 20) {
-        const y = i * waveSpacing + Math.sin(x * 0.03 + time + i) * 5;
-
-        if (x === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      }
-
+      ctx.arc(
+        canvas.width / 2,
+        canvas.height / 2,
+        radius + offset * 20,
+        0,
+        Math.PI * 2
+      );
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 5;
       ctx.stroke();
     }
+    ctx.restore();
+
+    // 水面の光の反射
+    ctx.save();
+    ctx.globalAlpha = 0.2;
+    for (let i = 0; i < 10; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      const size = 5 + Math.random() * 20;
+
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   // ゲームループ
   function gameLoop() {
     if (!gameState.isPlaying) return;
 
-    // キャンバスをクリア
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // 水面のパターンを描画
+    // 背景と魚の描画
     drawWaterPattern();
-
-    // 魚をランダムに生成
-    if (Math.random() < 0.05 && gameState.fish.length < 15) {
-      createFish();
-    }
-
-    // 魚の更新と描画
     updateFish();
     drawFish();
 
-    // 次のフレームを要求
+    // 次のフレームのアニメーション
     requestAnimationFrame(gameLoop);
   }
 
@@ -439,6 +475,13 @@ document.addEventListener("DOMContentLoaded", () => {
     gameState.timeRemaining--;
     timerElement.textContent = gameState.timeRemaining;
 
+    // 残り時間10秒以下でタイマーの色を変更
+    if (gameState.timeRemaining <= 10 && !gameState.isTimeWarning) {
+      gameState.isTimeWarning = true;
+      timerElement.parentElement.classList.add("time-warning");
+      sounds.timeWarning.play();
+    }
+
     if (gameState.timeRemaining <= 0) {
       endGame();
     }
@@ -446,121 +489,145 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ゲーム開始
   function startGame() {
-    // ゲーム状態のリセット
-    gameState = {
-      isPlaying: true,
-      score: 0,
-      timeRemaining: 60,
-      timeInterval: null,
-      fish: [],
-      lastTouchX: 0,
-      lastTouchY: 0,
-      poiHealth: 100,
-      poiMaxCatchAttempts: 5,
-      poiCatchAttempts: 0,
-      poiBroken: false,
-    };
+    // 初期化
+    gameState.isPlaying = true;
+    gameState.score = 0;
+    gameState.timeRemaining = 60;
+    gameState.poiCatchAttempts = 0;
+    gameState.poiBroken = false;
+    gameState.isTimeWarning = false;
+    gameState.fish = [];
 
-    // UI更新
+    // 表示の更新
     scoreElement.textContent = "0";
     timerElement.textContent = "60";
+    timerElement.parentElement.classList.remove("time-warning");
+
+    // ゲームオーバー画面を非表示
     gameOverScreen.classList.add("hidden");
-    startButton.style.display = "none";
+
+    // ポイのリセット
     poiElement.src = "assets/poi.svg";
     poiElement.style.opacity = 1;
 
-    // ゲームループとタイマーの開始
-    gameLoop();
+    // スタートボタンを非表示
+    startButton.style.display = "none";
+
+    // 説明テキストを非表示
+    document.querySelector(".instructions").style.display = "none";
+
+    // 効果音
+    sounds.start.play();
+
+    // 初期の魚を生成
+    for (let i = 0; i < 5; i++) {
+      createFish();
+    }
+
+    // タイマーの開始
     gameState.timeInterval = setInterval(updateTimer, 1000);
 
-    // 開始音
-    sounds.start.play();
+    // ゲームループの開始
+    gameLoop();
   }
 
   // ゲーム終了
   function endGame() {
+    // ゲーム状態の更新
     gameState.isPlaying = false;
     clearInterval(gameState.timeInterval);
 
-    // 終了音
+    // 効果音
     sounds.gameover.play();
 
-    // スコア表示
+    // 最終スコアの表示
     finalScoreElement.textContent = gameState.score;
 
-    // ゲームオーバー画面表示
-    gameOverScreen.classList.remove("hidden");
-    gameOverScreen
-      .querySelector(".game-over-content")
-      .classList.add("animate__bounceIn");
+    // アニメーションクラスの初期化
+    const gameOverContent = document.querySelector(".game-over-content");
+    gameOverContent.classList.remove("animate__zoomIn");
+    void gameOverContent.offsetWidth; // リフロー（アニメーションリセット）
+    gameOverContent.classList.add("animate__zoomIn");
 
-    // スタートボタンの表示
+    // ゲームオーバー画面の表示
+    gameOverScreen.classList.remove("hidden");
+
+    // スタートボタンを再表示
     startButton.style.display = "block";
+    document.querySelector(".instructions").style.display = "block";
   }
 
   // 結果共有
   function shareResult() {
-    const text = `金魚すくいゲームで${gameState.score}点獲得しました！あなたも挑戦してみませんか？`;
-
     if (navigator.share) {
       navigator
         .share({
           title: "金魚すくいゲーム",
-          text: text,
-          url: document.location.href,
+          text: `金魚すくいゲームで${gameState.score}点獲得しました！あなたも挑戦してみてください！`,
+          url: window.location.href,
         })
-        .catch((error) => console.log("シェアに失敗しました", error));
+        .catch((error) => console.log("共有に失敗しました", error));
     } else {
-      // フォールバック：テキストをクリップボードにコピー
-      navigator.clipboard
-        .writeText(text)
-        .then(() => {
-          alert("結果をクリップボードにコピーしました！");
-        })
-        .catch((err) => {
-          console.error("クリップボードへのコピーに失敗しました", err);
-        });
+      // Web Share APIに対応していない場合
+      const text = `金魚すくいゲームで${gameState.score}点獲得しました！あなたも挑戦してみてください！ ${window.location.href}`;
+
+      if (navigator.clipboard) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            alert(
+              "結果をクリップボードにコピーしました！SNSで共有してください。"
+            );
+          })
+          .catch(() => {
+            alert("クリップボードへのコピーに失敗しました。");
+          });
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        alert("結果をクリップボードにコピーしました！SNSで共有してください。");
+      }
     }
   }
 
-  // イベントリスナー設定
+  // イベントリスナーの設定
   function setupEventListeners() {
     startButton.addEventListener("click", startGame);
     restartButton.addEventListener("click", startGame);
-    shareButton.addEventListener("click", shareResult);
 
-    // iOS Safari でのダブルタップズームを防止
-    document.addEventListener(
-      "touchstart",
-      (e) => {
-        if (e.touches.length > 1) {
-          e.preventDefault();
+    if (shareButton) {
+      shareButton.addEventListener("click", shareResult);
+    }
+
+    // モバイルデバイスの向き変更検出
+    window.addEventListener("orientationchange", () => {
+      const orientationMessage = document.getElementById("orientation-message");
+
+      if (orientationMessage) {
+        if (window.orientation === 90 || window.orientation === -90) {
+          // 横向き
+          orientationMessage.style.display = "flex";
+        } else {
+          // 縦向き
+          orientationMessage.style.display = "none";
         }
-      },
-      { passive: false }
-    );
+      }
+    });
 
-    let lastTouchEnd = 0;
-    document.addEventListener(
-      "touchend",
-      (e) => {
-        const now = Date.now();
-        if (now - lastTouchEnd < 300) {
-          e.preventDefault();
-        }
-        lastTouchEnd = now;
-      },
-      { passive: false }
-    );
-
-    // ピンチズームを防止
-    document.addEventListener(
-      "gesturestart",
-      (e) => {
-        e.preventDefault();
-      },
-      { passive: false }
-    );
+    // ページビジビリティの変更を検出（バックグラウンドになった時にポーズ）
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && gameState.isPlaying) {
+        // 一時停止の処理
+        clearInterval(gameState.timeInterval);
+      } else if (!document.hidden && gameState.isPlaying) {
+        // 再開の処理
+        gameState.timeInterval = setInterval(updateTimer, 1000);
+      }
+    });
   }
 
   // 初期化
@@ -568,16 +635,29 @@ document.addEventListener("DOMContentLoaded", () => {
     setupTouchEvents();
     setupEventListeners();
 
-    // iOSのスクロールバウンス防止
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "fixed";
-    document.body.style.width = "100%";
-    document.body.style.height = "100%";
-
-    // 初期の水面パターン描画
+    // ゲーム画面の初期描画
     drawWaterPattern();
+
+    // モバイルデバイスの向きチェック
+    if (window.orientation === 90 || window.orientation === -90) {
+      const orientationMessage = document.getElementById("orientation-message");
+      if (orientationMessage) {
+        orientationMessage.style.display = "flex";
+      }
+    }
+
+    // iPhoneなどでのスクロールを防止
+    document.body.addEventListener(
+      "touchmove",
+      function (e) {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
   }
 
-  // ゲーム初期化
+  // ゲームの初期化
   init();
 });
