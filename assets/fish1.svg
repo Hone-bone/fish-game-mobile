@@ -34,7 +34,7 @@
   </defs>
   
   <!-- 金魚の体 -->
-  <g transform="translate(60, 35)">
+  <g transform="translate(60, 35) scale(1, -1)">
     <!-- 尾びれ - 流れるような形状 -->
     <path d="M -35,0 C -50,-25 -75,-10 -55,0 C -75,10 -50,25 -35,0 Z" fill="url(#tailGradient)" opacity="0.9" />
     <path d="M -25,0 C -40,-20 -60,-8 -45,0 C -60,8 -40,20 -25,0 Z" fill="url(#tailGradient)" opacity="0.95" />
@@ -47,26 +47,12 @@
     <path d="M -20,0 Q -10,-20 10,-12 Q 30,-15 45,0 Q 30,15 10,12 Q -10,20 -20,0 Z" fill="url(#bodyGradient)" filter="url(#glowFilter)" />
     <path d="M -20,0 Q -10,-20 10,-12 Q 30,-15 45,0 Q 30,15 10,12 Q -10,20 -20,0 Z" fill="url(#scalePattern)" />
     
-    <!-- 背びれ - シンプルで流れるような表現 -->
-    <path d="M 5,-12 C 15,-25 25,-20 15,-10 C 10,-5 0,-8 5,-12" fill="#ff3333" opacity="0.8" />
-    <path d="M 5,-12 C 10,-18 18,-15 12,-8 C 8,-6 2,-9 5,-12" fill="#ffffff" opacity="0.2" />
+    <!-- 背びれ - 尾びれ側に広がる -->
+    <path d="M 5,-12 C -5,-25 -15,-20 -5,-10 C 0,-5 10,-8 5,-12" fill="#ff3333" opacity="0.8" />
+    <path d="M 5,-12 C 0,-18 -8,-15 -2,-8 C 2,-6 8,-9 5,-12" fill="#ffffff" opacity="0.2" />
     
-    <!-- 腹びれ -->
-    <path d="M 5,12 C 15,25 25,20 15,10 C 10,5 0,8 5,12" fill="#ff3333" opacity="0.8" />
-    <path d="M 5,12 C 10,18 18,15 12,8 C 8,6 2,9 5,12" fill="#ffffff" opacity="0.2" />
-    
-    <!-- 胸びれ - シンプルでなめらかな表現 -->
-    <path d="M 20,-5 C 25,-12 32,-10 28,-3 C 25,-1 22,-2 20,-5" fill="#ff6666" opacity="0.7" />
-    <path d="M 20,5 C 25,12 32,10 28,3 C 25,1 22,2 20,5" fill="#ff6666" opacity="0.7" />
-    
-    <!-- 体の光沢 - シンプルで美しい光の反射 -->
-    <ellipse cx="10" cy="-5" rx="20" ry="6" fill="white" opacity="0.2" />
-    <ellipse cx="5" cy="0" rx="10" ry="4" fill="white" opacity="0.1" />
-    <ellipse cx="30" cy="-2" rx="10" ry="4" fill="white" opacity="0.15" />
+    <!-- 腹びれ - 尾びれ側に広がる -->
+    <path d="M 5,12 C -5,25 -15,20 -5,10 C 0,5 10,8 5,12" fill="#ff3333" opacity="0.8" />
+    <path d="M 5,12 C 0,18 -8,15 -2,8 C 2,6 8,9 5,12" fill="#ffffff" opacity="0.2" />
   </g>
-  
-  <!-- 水泡 -->
-  <circle cx="95" cy="25" r="2" fill="white" opacity="0.7" />
-  <circle cx="100" cy="20" r="1.5" fill="white" opacity="0.7" />
-  <circle cx="97" cy="30" r="1" fill="white" opacity="0.7" />
 </svg> 

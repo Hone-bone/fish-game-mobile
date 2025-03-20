@@ -34,7 +34,7 @@
   </defs>
   
   <!-- 金魚の体 -->
-  <g transform="translate(60, 35)">
+  <g transform="translate(60, 35) scale(1, -1)">
     <!-- 尾びれ - 豪華で流れるような形状 -->
     <path d="M -40,0 C -60,-28 -80,-12 -60,0 C -80,12 -60,28 -40,0 Z" fill="url(#tailGradient)" opacity="0.9" />
     <path d="M -28,0 C -48,-22 -65,-8 -50,0 C -65,8 -48,22 -28,0 Z" fill="url(#tailGradient)" opacity="0.95" />
@@ -47,26 +47,12 @@
     <path d="M -25,0 Q -15,-22 10,-14 Q 30,-17 48,0 Q 30,17 10,14 Q -15,22 -25,0 Z" fill="url(#bodyGradient)" filter="url(#glowFilter)" />
     <path d="M -25,0 Q -15,-22 10,-14 Q 30,-17 48,0 Q 30,17 10,14 Q -15,22 -25,0 Z" fill="url(#scalePattern)" />
     
-    <!-- 背びれ - 力強く優雅な表現 -->
-    <path d="M 10,-14 C 20,-28 30,-22 20,-12 C 15,-6 5,-9 10,-14" fill="#333333" opacity="0.9" />
-    <path d="M 10,-14 C 15,-20 23,-17 17,-10 C 13,-6 7,-9 10,-14" fill="#999999" opacity="0.1" />
+    <!-- 背びれ - 尾びれ側に広がる -->
+    <path d="M 10,-14 C 0,-28 -10,-22 0,-12 C 5,-6 15,-9 10,-14" fill="#333333" opacity="0.9" />
+    <path d="M 10,-14 C 5,-20 -3,-17 3,-10 C 7,-6 13,-9 10,-14" fill="#999999" opacity="0.1" />
     
-    <!-- 腹びれ -->
-    <path d="M 10,14 C 20,28 30,22 20,12 C 15,6 5,9 10,14" fill="#333333" opacity="0.9" />
-    <path d="M 10,14 C 15,20 23,17 17,10 C 13,6 7,9 10,14" fill="#999999" opacity="0.1" />
-    
-    <!-- 胸びれ - 力強い表現 -->
-    <path d="M 25,-6 C 32,-14 38,-12 34,-4 C 30,-1 27,-3 25,-6" fill="#444444" opacity="0.9" />
-    <path d="M 25,6 C 32,14 38,12 34,4 C 30,1 27,3 25,6" fill="#444444" opacity="0.9" />
-    
-    <!-- 体の光沢 - シンプルで上品な光の反射 -->
-    <ellipse cx="15" cy="-5" rx="25" ry="8" fill="white" opacity="0.15" />
-    <ellipse cx="10" cy="0" rx="12" ry="4" fill="white" opacity="0.08" />
-    <ellipse cx="35" cy="-3" rx="10" ry="4" fill="white" opacity="0.1" />
+    <!-- 腹びれ - 尾びれ側に広がる -->
+    <path d="M 10,14 C 0,28 -10,22 0,12 C 5,6 15,9 10,14" fill="#333333" opacity="0.9" />
+    <path d="M 10,14 C 5,20 -3,17 3,10 C 7,6 13,9 10,14" fill="#999999" opacity="0.1" />
   </g>
-  
-  <!-- 水泡 -->
-  <circle cx="95" cy="25" r="1.5" fill="white" opacity="0.7" />
-  <circle cx="100" cy="20" r="1" fill="white" opacity="0.7" />
-  <circle cx="97" cy="30" r="1" fill="white" opacity="0.7" />
 </svg> 
