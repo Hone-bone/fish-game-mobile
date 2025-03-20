@@ -760,8 +760,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (fish.imageObj && fish.imageObj.complete) {
           try {
             // 魚のサイズに合わせてスケーリング（中心を基準に）
-            const width = fish.size * 2; // 拡大率を調整（3→2）
-            const height = fish.size; // 拡大率を調整（1.5→1）
+            const width = fish.size * 3; // サイズを大きくして詳細を見やすく
+            const height = fish.size * 1.5;
             ctx.drawImage(
               fish.imageObj,
               -width / 2,
@@ -1035,9 +1035,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       setupTouchEvents();
       setupEventListeners();
-
-      // 画面サイズを設定してからアセットを読み込む
-      resizeCanvas();
 
       // 魚の画像を事前に読み込む
       preloadFishImages().then(() => {
