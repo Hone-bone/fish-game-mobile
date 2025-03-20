@@ -12,7 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
       lastTouchX: 0,
       lastTouchY: 0,
       isTimeWarning: false,
-      devicePixelRatio: window.devicePixelRatio || 1,
+      // devicePixelRatioを削除（不要のためコメントアウト）
+      // devicePixelRatio: window.devicePixelRatio || 1,
     };
 
     // ゲーム要素の取得
@@ -39,30 +40,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      // アスペクト比を計算して調整（縦長の画面に最適化）
-      const idealAspectRatio = 9 / 16; // 縦長の理想的なアスペクト比
-      const currentAspectRatio = viewportWidth / viewportHeight;
-
-      // ゲームエリアのサイズを計算
+      // ゲームエリアのサイズを計算（ゲームエリアいっぱいに表示）
       let calculatedWidth = gameArea.offsetWidth;
       let calculatedHeight = gameArea.offsetHeight;
 
-      // 横長の画面では高さに合わせて幅を調整
-      if (currentAspectRatio > idealAspectRatio) {
-        calculatedWidth = Math.min(
-          calculatedWidth,
-          gameArea.offsetHeight * idealAspectRatio
-        );
-      }
-
-      // キャンバスのサイズを設定
+      // キャンバスの物理的なサイズを設定
       canvas.width = calculatedWidth;
       canvas.height = calculatedHeight;
 
-      // デバイスピクセル比を適用して高解像度表示に対応
-      const pixelRatio = window.devicePixelRatio || 1;
+      // CSS上のサイズを設定（ピクセル比は考慮せず1:1で表示）
       canvas.style.width = `${calculatedWidth}px`;
       canvas.style.height = `${calculatedHeight}px`;
+
+      console.log(
+        `キャンバスサイズ設定: ${calculatedWidth}x${calculatedHeight}`
+      );
 
       // 既に魚が描画されていれば再描画する
       if (gameState && gameState.isPlaying) {
@@ -77,7 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("orientationchange", () => {
       setTimeout(resizeCanvas, 300); // 向き変更後に遅延させてサイズを調整
     });
-    resizeCanvas(); // 初期化時にも呼び出し
 
     // 音声効果 - 空のダミー関数を用意
     let dummySound = {
@@ -197,8 +188,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // タッチイベントの設定
     function setupTouchEvents() {
-      // デバイスピクセル比率の取得
-      gameState.devicePixelRatio = window.devicePixelRatio || 1;
+      // デバイスピクセル比率の設定を削除（不要のためコメントアウト）
+      // gameState.devicePixelRatio = window.devicePixelRatio || 1;
 
       // マウスイベント（デスクトップ用）
       canvas.addEventListener("mousedown", (e) => {
@@ -1029,7 +1020,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("イベントリスナー設定完了");
     }
 
-    // 初期化
+    // ゲームの初期化
     function init() {
       console.log("初期化開始");
 
@@ -1039,6 +1030,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // 魚の画像を事前に読み込む
       preloadFishImages().then(() => {
         console.log("魚の画像読み込み完了");
+
+        // キャンバスのサイズを初期設定
+        resizeCanvas();
 
         // ゲーム画面の初期描画
         drawWaterPattern();
