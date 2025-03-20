@@ -10,7 +10,7 @@
     
     <!-- 尾びれのグラデーション -->
     <linearGradient id="tailGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#333333;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#444444;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#000000;stop-opacity:1" />
     </linearGradient>
     
@@ -44,48 +44,62 @@
     </filter>
     
     <!-- うろこパターン -->
-    <pattern id="scalePattern" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
-      <path d="M 0,0 C 4,0 8,4 8,8 C 8,4 4,0 0,0 z" fill="#444444" opacity="0.15" />
+    <pattern id="scalePattern" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
+      <path d="M 0,0 C 3.5,0 7,3.5 7,7 C 7,3.5 3.5,0 0,0 z" fill="#333333" opacity="0.25" />
     </pattern>
   </defs>
   
-  <!-- 金魚の尾びれ -->
-  <g transform="translate(0, 40)">
-    <path d="M 50,0 C 35,-25 5,-15 20,0 C 5,15 35,25 50,0 Z" fill="url(#tailGradient)" />
-    <path d="M 45,0 C 25,-20 -5,-10 15,0 C -5,10 25,20 45,0 Z" fill="url(#tailGradient)" />
-  </g>
-  
   <!-- 金魚の体 -->
-  <ellipse cx="75" cy="40" rx="45" ry="30" fill="url(#bodyGradient)" filter="url(#glowFilter)" />
-  <ellipse cx="75" cy="40" rx="45" ry="30" fill="url(#scalePattern)" />
-  
-  <!-- 出目 -->
-  <g filter="url(#bubbleEffect)">
-    <circle cx="95" cy="25" r="12" fill="url(#bubbleGradient)" stroke="#000000" stroke-width="0.5" />
-    <circle cx="95" cy="55" r="12" fill="url(#bubbleGradient)" stroke="#000000" stroke-width="0.5" />
+  <g transform="translate(40, 40)">
+    <!-- 尾びれ - より複雑で自然な形状 -->
+    <path d="M -25,0 C -40,-25 -60,-10 -45,0 C -60,10 -40,25 -25,0 Z" fill="url(#tailGradient)" opacity="0.9" />
+    <path d="M -20,0 C -35,-20 -50,-5 -40,0 C -50,5 -35,20 -20,0 Z" fill="url(#tailGradient)" opacity="0.95" />
+    
+    <!-- 尾びれの質感表現 -->
+    <path d="M -25,0 C -35,-15 -50,-5 -40,0 C -50,5 -35,15 -25,0 Z" fill="#333333" opacity="0.3" />
+    <path d="M -30,-5 C -40,-15 -45,-5 -40,0 C -45,5 -40,15 -30,5 Z" fill="#555555" opacity="0.2" />
+    
+    <!-- 体 - より実際の金魚の体型に近い形状 -->
+    <path d="M -20,0 Q -10,-25 15,-15 Q 35,-20 50,0 Q 35,20 15,15 Q -10,25 -20,0 Z" fill="url(#bodyGradient)" filter="url(#glowFilter)" />
+    <path d="M -20,0 Q -10,-25 15,-15 Q 35,-20 50,0 Q 35,20 15,15 Q -10,25 -20,0 Z" fill="url(#scalePattern)" />
+    
+    <!-- 出目（黒い金魚の特徴）- より自然な形状 -->
+    <g>
+      <path d="M 15,-15 Q 20,-30 30,-15 Q 25,-5 15,-15 Z" fill="url(#bubbleGradient)" stroke="#000000" stroke-width="0.5" />
+      <path d="M 15,15 Q 20,30 30,15 Q 25,5 15,15 Z" fill="url(#bubbleGradient)" stroke="#000000" stroke-width="0.5" />
+    </g>
+    
+    <!-- 背びれ - より自然な形状 -->
+    <path d="M 10,-15 C 15,-30 30,-25 20,-15 C 15,-5 5,-5 10,-15" fill="#222222" opacity="0.9" />
+    <path d="M 10,-15 C 12,-25 20,-20 15,-10 C 12,-7 8,-7 10,-15" fill="#555555" opacity="0.3" />
+    
+    <!-- 腹びれ -->
+    <path d="M 10,15 C 15,30 30,25 20,15 C 15,5 5,5 10,15" fill="#222222" opacity="0.9" />
+    <path d="M 10,15 C 12,25 20,20 15,10 C 12,7 8,7 10,15" fill="#555555" opacity="0.3" />
+    
+    <!-- 胸びれ - 薄くて繊細な表現 -->
+    <path d="M 30,-8 C 38,-15 45,-10 40,-5 C 35,0 32,-3 30,-8" fill="#333333" opacity="0.8" />
+    <path d="M 30,8 C 38,15 45,10 40,5 C 35,0 32,3 30,8" fill="#333333" opacity="0.8" />
+    
+    <!-- 目 - よりリアルな表現 -->
+    <circle cx="40" cy="-5" r="4" fill="white" />
+    <circle cx="40" cy="-5" r="2.5" fill="black" />
+    <circle cx="41" cy="-6" r="1" fill="white" />
+    
+    <circle cx="40" cy="5" r="4" fill="white" />
+    <circle cx="40" cy="5" r="2.5" fill="black" />
+    <circle cx="41" cy="4" r="1" fill="white" />
+    
+    <!-- 口 -->
+    <path d="M 48,-1 C 52,0 52,1 48,2" fill="none" stroke="#333" stroke-width="0.7" />
+    
+    <!-- 体の光沢 -->
+    <ellipse cx="20" cy="-8" rx="15" ry="5" fill="white" opacity="0.15" />
+    <ellipse cx="15" cy="0" rx="10" ry="3" fill="white" opacity="0.1" />
   </g>
   
-  <!-- 目 -->
-  <circle cx="100" cy="25" r="5" fill="white" />
-  <circle cx="100" cy="25" r="3" fill="black" />
-  <circle cx="98" cy="23" r="1" fill="white" />
-  
-  <circle cx="100" cy="55" r="5" fill="white" />
-  <circle cx="100" cy="55" r="3" fill="black" />
-  <circle cx="98" cy="53" r="1" fill="white" />
-  
-  <!-- 胸びれ -->
-  <path d="M 65,58 C 70,65 75,70 80,65 C 75,60 70,55 65,58" fill="#333333" opacity="0.9" />
-  <path d="M 65,22 C 70,15 75,10 80,15 C 75,20 70,25 65,22" fill="#333333" opacity="0.9" />
-  
-  <!-- 背びれ -->
-  <path d="M 70,10 C 75,5 85,5 80,15 C 75,20 65,15 70,10" fill="#333333" />
-  
-  <!-- 光沢 -->
-  <ellipse cx="65" cy="30" rx="15" ry="8" fill="white" opacity="0.15" />
-  
-  <!-- 気泡 -->
-  <circle cx="115" cy="20" r="2.5" fill="white" opacity="0.6" />
-  <circle cx="120" cy="15" r="1.5" fill="white" opacity="0.6" />
-  <circle cx="118" cy="25" r="1" fill="white" opacity="0.6" />
+  <!-- 水泡 -->
+  <circle cx="105" cy="20" r="2" fill="white" opacity="0.6" />
+  <circle cx="110" cy="15" r="1.5" fill="white" opacity="0.6" />
+  <circle cx="108" cy="25" r="1" fill="white" opacity="0.6" />
 </svg> 

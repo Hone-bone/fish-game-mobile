@@ -103,10 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
     fish: [],
     lastTouchX: 0,
     lastTouchY: 0,
-    poiHealth: 100,
-    poiMaxCatchAttempts: 5,
-    poiCatchAttempts: 0,
-    poiBroken: false,
     isTimeWarning: false,
     devicePixelRatio: window.devicePixelRatio || 1,
   };
@@ -151,11 +147,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const fishImages = {};
 
   function preloadFishImages() {
-    fishTypes.forEach((type) => {
-      const img = new Image();
-      img.src = type.image;
-      fishImages[type.image] = img;
-      console.log(`魚の画像を読み込み: ${type.image}`);
+    return new Promise((resolve) => {
+      let loadedCount = 0;
+      const totalImages = fishTypes.length;
+
+      fishTypes.forEach((type) => {
+        const img = new Image();
+        img.onload = () => {
+          loadedCount++;
+          console.log(
+            `魚の画像を読み込み完了: ${type.image} (${loadedCount}/${totalImages})`
+          );
+          if (loadedCount === totalImages) {
+            resolve();
+          }
+        };
+        img.src = type.image;
+        fishImages[type.image] = img;
+      });
+
+      // 全ての画像が読み込まれるのを5秒以上待たない
+      setTimeout(resolve, 5000);
     });
   }
 
@@ -166,20 +178,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // マウスイベント（デスクトップ用）
     canvas.addEventListener("mousedown", (e) => {
-      if (!gameState.isPlaying || gameState.poiBroken) return;
+      if (!gameState.isPlaying) return;
       const rect = canvas.getBoundingClientRect();
       updatePoiPosition(e.clientX - rect.left, e.clientY - rect.top);
       poiContainer.style.display = "block";
     });
 
     canvas.addEventListener("mousemove", (e) => {
-      if (!e.buttons || !gameState.isPlaying || gameState.poiBroken) return;
+      if (!e.buttons || !gameState.isPlaying) return;
       const rect = canvas.getBoundingClientRect();
       updatePoiPosition(e.clientX - rect.left, e.clientY - rect.top);
     });
 
     canvas.addEventListener("mouseup", (e) => {
-      if (!gameState.isPlaying || gameState.poiBroken) return;
+      if (!gameState.isPlaying) return;
       const rect = canvas.getBoundingClientRect();
       catchFish(e.clientX - rect.left, e.clientY - rect.top);
       poiContainer.style.display = "none";
@@ -188,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // タッチイベント（モバイル用）
     canvas.addEventListener("touchstart", (e) => {
-      if (!gameState.isPlaying || gameState.poiBroken) return;
+      if (!gameState.isPlaying) return;
       e.preventDefault();
       const rect = canvas.getBoundingClientRect();
       const touch = e.touches[0];
@@ -197,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     canvas.addEventListener("touchmove", (e) => {
-      if (!gameState.isPlaying || gameState.poiBroken) return;
+      if (!gameState.isPlaying) return;
       e.preventDefault();
       const rect = canvas.getBoundingClientRect();
       const touch = e.touches[0];
@@ -205,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     canvas.addEventListener("touchend", (e) => {
-      if (!gameState.isPlaying || gameState.poiBroken) return;
+      if (!gameState.isPlaying) return;
       e.preventDefault();
       const rect = canvas.getBoundingClientRect();
       catchFish(gameState.lastTouchX, gameState.lastTouchY);
@@ -231,26 +243,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 魚をすくう
   function catchFish(x, y) {
-    if (gameState.poiBroken) return;
-
     try {
       sounds.splash.play();
     } catch (e) {
       console.error("サウンド再生エラー:", e);
     }
-
-    // ポイの使用回数を増やす
-    gameState.poiCatchAttempts++;
-
-    // ポイが壊れたかどうかをチェック
-    if (gameState.poiCatchAttempts >= gameState.poiMaxCatchAttempts) {
-      breakPoi();
-      return;
-    }
-
-    // ポイのダメージを表示（色を薄くする）
-    const damage = gameState.poiCatchAttempts / gameState.poiMaxCatchAttempts;
-    poiElement.style.opacity = 1 - damage * 0.7;
 
     // アニメーション効果
     poiElement.classList.add("poi-catch");
@@ -265,8 +262,8 @@ document.addEventListener("DOMContentLoaded", () => {
         Math.pow(fish.x - x, 2) + Math.pow(fish.y - y, 2)
       );
 
-      // 捕獲判定の調整（モバイル端末では少し捕まえやすくする）
-      const catchRadius = window.innerWidth <= 480 ? 45 : 40;
+      // 捕獲判定の調整（より捕まえやすくする）
+      const catchRadius = window.innerWidth <= 480 ? 60 : 50;
 
       if (distance < catchRadius) {
         // ポイのサイズと魚のサイズを考慮した捕獲範囲
@@ -298,34 +295,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     return caught;
-  }
-
-  // ポイが壊れる
-  function breakPoi() {
-    gameState.poiBroken = true;
-    try {
-      sounds.poiBreak.play();
-    } catch (e) {
-      console.error("サウンド再生エラー:", e);
-    }
-
-    // 壊れたポイの画像に変更
-    poiElement.src = "assets/broken-poi.svg";
-    poiElement.style.opacity = 1;
-
-    // 一時的にポイを表示して壊れたことを示す
-    poiContainer.style.display = "block";
-    setTimeout(() => {
-      poiContainer.style.display = "none";
-
-      // 3秒後に新しいポイを用意
-      setTimeout(() => {
-        gameState.poiBroken = false;
-        gameState.poiCatchAttempts = 0;
-        poiElement.src = "assets/poi.svg";
-        poiElement.style.opacity = 1;
-      }, 3000);
-    }, 1000);
   }
 
   // 水しぶきエフェクトの作成
@@ -383,26 +352,46 @@ document.addEventListener("DOMContentLoaded", () => {
       ? selectedFishType.speed * 1.1
       : selectedFishType.speed;
 
-    // 魚の開始位置（キャンバスの端からランダム）
-    const startFromSide = Math.random() > 0.5;
+    // 魚の開始位置と方向をより自然に設定
     let x, y;
     let directionX, directionY;
 
-    if (startFromSide) {
-      // 左右のいずれかから開始
-      x = Math.random() > 0.5 ? 0 : canvas.width;
-      y = Math.random() * canvas.height;
-      directionX = x === 0 ? 1 : -1;
-      directionY = Math.random() * 2 - 1;
+    // 開始位置をランダムに決定（画面外または端から）
+    const entryType = Math.random();
+
+    if (entryType < 0.6) {
+      // 60%の確率で左右の端から
+      x = Math.random() > 0.5 ? -adjustedSize : canvas.width + adjustedSize;
+      y = Math.random() * (canvas.height - 2 * adjustedSize) + adjustedSize;
+      // 画面中央に向かう方向
+      directionX =
+        x < 0 ? 0.8 + Math.random() * 0.2 : -0.8 - Math.random() * 0.2;
+      directionY = (canvas.height / 2 - y) / canvas.height;
+    } else if (entryType < 0.9) {
+      // 30%の確率で上下の端から
+      x = Math.random() * (canvas.width - 2 * adjustedSize) + adjustedSize;
+      y = Math.random() > 0.5 ? -adjustedSize : canvas.height + adjustedSize;
+      // 画面中央に向かう方向
+      directionX = (canvas.width / 2 - x) / canvas.width;
+      directionY =
+        y < 0 ? 0.8 + Math.random() * 0.2 : -0.8 - Math.random() * 0.2;
     } else {
-      // 上下のいずれかから開始
-      x = Math.random() * canvas.width;
-      y = Math.random() > 0.5 ? 0 : canvas.height;
+      // 10%の確率で画面中の何処かに出現（すでに水槽内にいる魚）
+      x = Math.random() * (canvas.width - 2 * adjustedSize) + adjustedSize;
+      y = Math.random() * (canvas.height - 2 * adjustedSize) + adjustedSize;
+      // ランダムな方向
       directionX = Math.random() * 2 - 1;
-      directionY = y === 0 ? 1 : -1;
+      directionY = Math.random() * 2 - 1;
     }
 
-    // 魚オブジェクトの作成
+    // 方向ベクトルの正規化
+    const length = Math.sqrt(directionX * directionX + directionY * directionY);
+    if (length > 0) {
+      directionX /= length;
+      directionY /= length;
+    }
+
+    // 魚オブジェクトの作成（自然な動きのパラメータを追加）
     const fish = {
       x,
       y,
@@ -422,8 +411,13 @@ document.addEventListener("DOMContentLoaded", () => {
       acceleration: 0, // 加速度
       maxSpeed: adjustedSpeed * 1.5, // 最大速度
       minSpeed: adjustedSpeed * 0.7, // 最小速度
-      speedChangeInterval: 60 + Math.floor(Math.random() * 120), // 速度変更間隔（フレーム数）
-      frameCount: 0, // フレームカウンター
+      speedChangeInterval: 60 + Math.floor(Math.random() * 120), // 速度変更間隔
+      frameCount: Math.floor(Math.random() * 100), // 初期フレームカウントをランダムに
+      targetX: null, // 目標x座標（初期はnull）
+      targetY: null, // 目標y座標（初期はnull）
+      targetForce: 0.01 + Math.random() * 0.01, // 目標に向かう力
+      // 魚の種類ごとの特性
+      personalityType: Math.floor(Math.random() * 3), // 0:穏やか 1:活発 2:変則的
     };
 
     gameState.fish.push(fish);
@@ -460,10 +454,72 @@ document.addEventListener("DOMContentLoaded", () => {
         fish.directionY = (fish.directionY / length) * (newSpeed / fish.speed);
       }
 
-      // 揺れる動きの計算
+      // 目標点に向かって泳ぐ行動を追加（魚が自然に水槽内を泳ぐように）
+      if (fish.frameCount % 180 === 0 || !fish.targetX) {
+        // 新しい目標点を設定
+        fish.targetX = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
+        fish.targetY =
+          Math.random() * canvas.height * 0.8 + canvas.height * 0.1;
+        // 目標に向かうための力の強さをランダムに設定
+        fish.targetForce = 0.01 + Math.random() * 0.02;
+      }
+
+      // 目標点への方向ベクトルを計算
+      const toTargetX = fish.targetX - fish.x;
+      const toTargetY = fish.targetY - fish.y;
+      const targetDist = Math.sqrt(
+        toTargetX * toTargetX + toTargetY * toTargetY
+      );
+
+      if (targetDist > 5) {
+        // 目標点が近すぎない場合だけ方向調整
+        // 目標への方向と現在の方向を混ぜる（徐々に方向転換）
+        fish.directionX += (toTargetX / targetDist) * fish.targetForce;
+        fish.directionY += (toTargetY / targetDist) * fish.targetForce;
+
+        // 方向ベクトルを再度正規化
+        const newLength = Math.sqrt(
+          fish.directionX * fish.directionX + fish.directionY * fish.directionY
+        );
+        if (newLength > 0) {
+          fish.directionX = fish.directionX / newLength;
+          fish.directionY = fish.directionY / newLength;
+        }
+      }
+
+      // 揺れる動きの計算（より自然な揺れを実現）
       const wiggle =
         Math.sin(fish.frameCount * fish.wiggleSpeed + fish.wiggleOffset) *
         fish.wiggleAmount;
+
+      // 魚の種類に応じて特別な動き（例：金魚は上下に揺れやすい）
+      let specialMove = 0;
+      if (fish.color === "red" || fish.color === "gold") {
+        // 赤や金色の魚（金魚）は上下に揺れやすい
+        specialMove = Math.sin(fish.frameCount * 0.02) * 0.2;
+        fish.directionY += specialMove;
+      } else if (fish.color === "blue") {
+        // 青い魚は滑らかな動き
+        specialMove = Math.cos(fish.frameCount * 0.03) * 0.15;
+        fish.directionX += specialMove;
+      } else if (fish.color === "black") {
+        // 黒い魚はジグザグ動き
+        specialMove = Math.sin(fish.frameCount * 0.08) * 0.25;
+        if (fish.frameCount % 30 < 15) {
+          fish.directionX += specialMove;
+        } else {
+          fish.directionY += specialMove;
+        }
+      }
+
+      // 方向ベクトルを再度正規化
+      const dirLength = Math.sqrt(
+        fish.directionX * fish.directionX + fish.directionY * fish.directionY
+      );
+      if (dirLength > 0) {
+        fish.directionX = fish.directionX / dirLength;
+        fish.directionY = fish.directionY / dirLength;
+      }
 
       // 魚の向きを計算（ベースの方向 + 揺れ）
       const baseAngle = Math.atan2(fish.directionY, fish.directionX);
@@ -506,12 +562,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // 方向ベクトルの正規化（一定の長さに保つ）
-      const newLength = Math.sqrt(
+      const finalLength = Math.sqrt(
         fish.directionX * fish.directionX + fish.directionY * fish.directionY
       );
-      if (newLength > 0) {
-        fish.directionX = fish.directionX / newLength;
-        fish.directionY = fish.directionY / newLength;
+      if (finalLength > 0) {
+        fish.directionX = fish.directionX / finalLength;
+        fish.directionY = fish.directionY / finalLength;
       }
     });
 
@@ -526,13 +582,23 @@ document.addEventListener("DOMContentLoaded", () => {
     gameState.fish.forEach((fish) => {
       ctx.save();
       ctx.translate(fish.x, fish.y);
-      ctx.rotate(fish.rotation);
+
+      // 魚の進行方向を計算（directionXが負の場合は左向き）
+      const facingLeft = fish.directionX < 0;
+
+      // 進行方向に応じて回転角度を計算
+      if (facingLeft) {
+        // 左向きの場合、魚の向きを反転させるために追加で180度回転
+        ctx.rotate(fish.rotation + Math.PI);
+      } else {
+        ctx.rotate(fish.rotation);
+      }
 
       // SVG画像を使用して描画
-      if (fish.image && fish.imageObj) {
+      if (fish.imageObj && fish.imageObj.complete) {
         // 魚のサイズに合わせてスケーリング（中心を基準に）
-        const width = fish.size * 2;
-        const height = fish.size;
+        const width = fish.size * 3; // サイズを大きくして詳細を見やすく
+        const height = fish.size * 1.5;
         ctx.drawImage(fish.imageObj, -width / 2, -height / 2, width, height);
       } else {
         // 画像が読み込まれていない場合のフォールバック
@@ -541,11 +607,11 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.ellipse(0, 0, fish.size / 2, fish.size / 4, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 尾びれ
+        // 尾びれ（進行方向の逆側に描画）
         ctx.beginPath();
-        ctx.moveTo(fish.size / 2, 0);
-        ctx.lineTo(fish.size, fish.size / 4);
-        ctx.lineTo(fish.size, -fish.size / 4);
+        ctx.moveTo(-fish.size / 2, 0);
+        ctx.lineTo(-fish.size, fish.size / 4);
+        ctx.lineTo(-fish.size, -fish.size / 4);
         ctx.closePath();
         ctx.fill();
       }
@@ -643,8 +709,6 @@ document.addEventListener("DOMContentLoaded", () => {
     gameState.isPlaying = true;
     gameState.score = 0;
     gameState.timeRemaining = 60;
-    gameState.poiCatchAttempts = 0;
-    gameState.poiBroken = false;
     gameState.isTimeWarning = false;
     gameState.fish = [];
 
@@ -791,10 +855,18 @@ document.addEventListener("DOMContentLoaded", () => {
     setupEventListeners();
 
     // 魚の画像を事前に読み込む
-    preloadFishImages();
+    preloadFishImages().then(() => {
+      console.log("魚の画像読み込み完了");
 
-    // ゲーム画面の初期描画
-    drawWaterPattern();
+      // ゲーム画面の初期描画
+      drawWaterPattern();
+
+      // テスト用に1匹の魚を表示
+      if (!gameState.isPlaying) {
+        createFish();
+        drawFish();
+      }
+    });
 
     // モバイルデバイスの向きチェック
     if (window.orientation !== undefined) {
