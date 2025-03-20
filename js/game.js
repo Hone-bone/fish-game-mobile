@@ -809,31 +809,87 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // グラデーション背景を作成（上部から下部へ）
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, "#4a9ad9"); // 上部の色（明るい青）
-      gradient.addColorStop(1, "#3d85c6"); // 下部の色（深い青）
+      gradient.addColorStop(0, "#2a5298"); // 上部の色（深い青）
+      gradient.addColorStop(0.4, "#3d7edb"); // 中間の色（明るい青）
+      gradient.addColorStop(1, "#1e3c72"); // 下部の色（暗い青）
 
       // 背景を描画
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // 現在の時間を取得（アニメーション用）
+      const currentTime = Date.now() * 0.001;
+
+      // 光の粒子効果
+      ctx.globalAlpha = 0.2;
+      const particleCount = 50;
+
+      for (let i = 0; i < particleCount; i++) {
+        // 粒子のサイズと位置をランダムに決定
+        const size = 2 + Math.random() * 4;
+        const x =
+          (Math.sin(currentTime * 0.3 + i * 0.5) * 0.5 + 0.5) * canvas.width;
+        const y =
+          (Math.cos(currentTime * 0.2 + i * 0.7) * 0.5 + 0.5) * canvas.height;
+
+        // 明るさの調整（時間によって明滅）
+        const brightness = 0.5 + 0.5 * Math.sin(currentTime * 2 + i);
+
+        // 光の粒子を描画
+        ctx.fillStyle = `rgba(255, 255, 255, ${brightness * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 光の筋
+      ctx.globalAlpha = 0.05;
+      for (let i = 0; i < 10; i++) {
+        const startX = Math.random() * canvas.width;
+        const startY = 0;
+        const angle = Math.PI / 6 + Math.random() * (Math.PI / 3);
+        const length = canvas.height * 1.5;
+        const width = 20 + Math.random() * 40;
+
+        // 時間経過で動く光の角度
+        const moveAngle = angle + Math.sin(currentTime * 0.2 + i) * 0.2;
+
+        ctx.save();
+        ctx.translate(startX, startY);
+        ctx.rotate(moveAngle);
+
+        // 光のグラデーション
+        const lightGradient = ctx.createLinearGradient(0, 0, 0, length);
+        lightGradient.addColorStop(0, "rgba(255, 255, 255, 0.8)");
+        lightGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+        ctx.fillStyle = lightGradient;
+        ctx.fillRect(-width / 2, 0, width, length);
+        ctx.restore();
+      }
+
       // 水の揺らぎ効果（波紋）を描画
-      ctx.globalAlpha = 0.05; // 非常に透明度を高くして目立たなくする
+      ctx.globalAlpha = 0.08;
 
       // 複数の波紋を描画
-      for (let i = 0; i < 3; i++) {
-        const currentTime = Date.now() * 0.001; // 秒単位の現在時刻
-        const amplitude = 15 + i * 5; // 波の振幅
-        const frequency = 0.02 - i * 0.005; // 波の周波数
-        const speed = 0.5 + i * 0.2; // 波の速度
+      for (let i = 0; i < 4; i++) {
+        const amplitude = 10 + i * 4; // 波の振幅
+        const frequency = 0.015 - i * 0.003; // 波の周波数
+        const speed = 0.3 + i * 0.1; // 波の速度
 
         ctx.beginPath();
 
-        // 水平方向の波紋
-        for (let x = 0; x < canvas.width; x += 20) {
-          for (let y = 0; y < canvas.height; y += 20) {
-            const waveOffset =
+        // 複雑な波紋パターン
+        for (let x = 0; x < canvas.width; x += 30) {
+          for (let y = 0; y < canvas.height; y += 30) {
+            const waveOffset1 =
               Math.sin(x * frequency + currentTime * speed) * amplitude;
-            const circleSize = 10 + waveOffset * 0.3;
+            const waveOffset2 =
+              Math.cos(y * frequency * 1.3 + currentTime * (speed * 0.7)) *
+              amplitude;
+            const combinedOffset = waveOffset1 + waveOffset2;
+
+            const circleSize = 15 + combinedOffset * 0.4;
 
             ctx.moveTo(x + circleSize, y);
             ctx.arc(x, y, circleSize, 0, Math.PI * 2);
@@ -841,7 +897,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // 波紋の色（青色の異なる色調）
-        ctx.fillStyle = i === 0 ? "#5fb3ff" : i === 1 ? "#4a9ad9" : "#3d85c6";
+        const colors = ["#5fb3ff", "#4a9ad9", "#3d85c6", "#2a5298"];
+        ctx.fillStyle = colors[i % colors.length];
         ctx.fill();
       }
 

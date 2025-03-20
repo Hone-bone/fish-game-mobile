@@ -12,14 +12,14 @@
   --accent-color: #e94560;
   --text-color: #f1f1f1;
   --light-text: #b8b8b8;
-  --background-color: #0f3460;
-  --card-color: #1a1a2e;
-  --shadow-color: rgba(0, 0, 0, 0.3);
+  --background-color: #0f1b38;
+  --card-color: #141e33;
+  --shadow-color: rgba(0, 0, 0, 0.5);
   --button-color: #e94560;
   --button-hover: #c13652;
   --success-color: #4ecca3;
-  --water-color: #0f3460;
-  --water-accent: #16213e;
+  --water-color: #192a56;
+  --water-accent: #273c75;
   --safe-area-inset-top: env(safe-area-inset-top);
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
 }
@@ -51,10 +51,11 @@ body {
   align-items: center;
   padding: calc(10px + var(--safe-area-inset-top)) 10px
     calc(10px + var(--safe-area-inset-bottom)) 10px;
-  background: linear-gradient(
-    135deg,
-    var(--background-color) 0%,
-    var(--secondary-color) 100%
+  background: radial-gradient(
+    ellipse at center,
+    #192a56 0%,
+    #0a1433 70%,
+    #050d24 100%
   );
 }
 
@@ -110,11 +111,11 @@ body {
   flex-direction: column;
   background-color: var(--card-color);
   border-radius: 20px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(41, 128, 255, 0.3);
   padding: 15px;
   overflow: hidden;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .game-header {
@@ -128,12 +129,12 @@ body {
 
 .score-container,
 .timer-container {
-  background-color: rgba(15, 52, 96, 0.7);
+  background-color: rgba(25, 42, 86, 0.8);
   padding: 8px 16px;
   border-radius: 25px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.4), 0 0 10px rgba(41, 128, 255, 0.2);
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text-color);
 }
 
@@ -154,7 +155,8 @@ body {
     var(--water-accent) 100%
   );
   margin-bottom: 15px;
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7),
+    0 0 15px rgba(41, 128, 255, 0.3);
 }
 
 #game-canvas {
@@ -368,22 +370,23 @@ button:focus {
   transform: translate(-50%, -50%);
   animation: splash 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
   pointer-events: none;
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.7);
 }
 
 @keyframes splash {
   0% {
     width: 0;
     height: 0;
-    opacity: 0.8;
+    opacity: 0.9;
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.7;
   }
   100% {
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
     opacity: 0;
   }
 }
@@ -394,16 +397,17 @@ button:focus {
   height: 0;
   border-radius: 50%;
   background-color: transparent;
-  border: 3px solid rgba(255, 255, 255, 0.7);
+  border: 4px solid rgba(255, 255, 255, 0.8);
   transform: translate(-50%, -50%);
-  animation: ripple 1s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+  animation: ripple 1.2s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
   pointer-events: none;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
 }
 
 @keyframes ripple {
   to {
-    width: 120px;
-    height: 120px;
+    width: 150px;
+    height: 150px;
     opacity: 0;
   }
 }
