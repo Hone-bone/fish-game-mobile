@@ -12,8 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
       lastTouchX: 0,
       lastTouchY: 0,
       isTimeWarning: false,
-      // devicePixelRatioを削除（不要のためコメントアウト）
-      // devicePixelRatio: window.devicePixelRatio || 1,
+      devicePixelRatio: window.devicePixelRatio || 1,
     };
 
     // ゲーム要素の取得
@@ -35,26 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // キャンバスサイズの設定
     function resizeCanvas() {
       const gameArea = document.querySelector(".game-area");
-
-      // ビューポートの寸法を取得
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      // ゲームエリアのサイズを計算（ゲームエリアいっぱいに表示）
-      let calculatedWidth = gameArea.offsetWidth;
-      let calculatedHeight = gameArea.offsetHeight;
-
-      // キャンバスの物理的なサイズを設定
-      canvas.width = calculatedWidth;
-      canvas.height = calculatedHeight;
-
-      // CSS上のサイズを設定（ピクセル比は考慮せず1:1で表示）
-      canvas.style.width = `${calculatedWidth}px`;
-      canvas.style.height = `${calculatedHeight}px`;
-
-      console.log(
-        `キャンバスサイズ設定: ${calculatedWidth}x${calculatedHeight}`
-      );
+      canvas.width = gameArea.offsetWidth;
+      canvas.height = gameArea.offsetHeight;
 
       // 既に魚が描画されていれば再描画する
       if (gameState && gameState.isPlaying) {
@@ -65,10 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 初期画面サイズの設定
     window.addEventListener("resize", resizeCanvas);
-    window.addEventListener("load", resizeCanvas);
-    window.addEventListener("orientationchange", () => {
-      setTimeout(resizeCanvas, 300); // 向き変更後に遅延させてサイズを調整
-    });
+    resizeCanvas();
 
     // 音声効果 - 空のダミー関数を用意
     let dummySound = {
@@ -188,8 +166,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // タッチイベントの設定
     function setupTouchEvents() {
-      // デバイスピクセル比率の設定を削除（不要のためコメントアウト）
-      // gameState.devicePixelRatio = window.devicePixelRatio || 1;
+      // デバイスピクセル比率の取得
+      gameState.devicePixelRatio = window.devicePixelRatio || 1;
 
       // マウスイベント（デスクトップ用）
       canvas.addEventListener("mousedown", (e) => {
@@ -238,6 +216,11 @@ document.addEventListener("DOMContentLoaded", () => {
         catchFish(gameState.lastTouchX, gameState.lastTouchY);
         poiContainer.style.display = "none";
         createSplash(gameState.lastTouchX, gameState.lastTouchY);
+      });
+
+      // スクリーン向きの変更を監視
+      window.addEventListener("orientationchange", () => {
+        setTimeout(resizeCanvas, 300); // 向き変更後に少し遅延させてサイズを調整
       });
 
       console.log("マウスイベント設定完了");
@@ -375,8 +358,8 @@ document.addEventListener("DOMContentLoaded", () => {
       // スマホ画面サイズに合わせた設定
       const isMobile = window.innerWidth <= 480;
       const adjustedSize = isMobile
-        ? selectedFishType.size * 0.5 // 0.6からさらに小さく0.5に変更
-        : selectedFishType.size * 0.6; // 0.7から0.6に変更してさらに縮小
+        ? selectedFishType.size * 0.9
+        : selectedFishType.size;
       const adjustedSpeed = isMobile
         ? selectedFishType.speed * 1.1
         : selectedFishType.speed;
@@ -777,9 +760,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (fish.imageObj && fish.imageObj.complete) {
           try {
             // 魚のサイズに合わせてスケーリング（中心を基準に）
-            const scaleFactor = 1.8; // 2.0から1.8に変更してさらに小さく調整
-            const width = fish.size * scaleFactor;
-            const height = fish.size * (scaleFactor / 2); // 縦横比を維持
+            const width = fish.size * 3; // サイズを大きくして詳細を見やすく
+            const height = fish.size * 1.5;
             ctx.drawImage(
               fish.imageObj,
               -width / 2,
@@ -1017,72 +999,22 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("シェアボタンのイベントリスナーを設定しました");
       }
 
-      console.log("イベントリスナー設定完了");
-    }
-
-    // ゲームの初期化
-    function init() {
-      console.log("初期化開始");
-
-      setupTouchEvents();
-      setupEventListeners();
-
-      // 魚の画像を事前に読み込む
-      preloadFishImages().then(() => {
-        console.log("魚の画像読み込み完了");
-
-        // キャンバスのサイズを初期設定
-        resizeCanvas();
-
-        // ゲーム画面の初期描画
-        drawWaterPattern();
-
-        // テスト用に1匹の魚を表示
-        if (!gameState.isPlaying) {
-          createFish();
-          drawFish();
-        }
-      });
-
-      // モバイルデバイスの向きチェックと表示調整
-      const updateOrientationMessage = () => {
+      // モバイルデバイスの向き変更検出
+      window.addEventListener("orientationchange", () => {
         const orientationMessage = document.getElementById(
           "orientation-message"
         );
-        if (!orientationMessage) return;
 
-        if (
-          (window.orientation !== undefined &&
-            (window.orientation === 90 || window.orientation === -90)) ||
-          window.innerWidth > window.innerHeight
-        ) {
-          // 横向き
-          orientationMessage.style.display = "flex";
-        } else {
-          // 縦向き
-          orientationMessage.style.display = "none";
-        }
-
-        // 向きに応じてリサイズを実行（遅延させてDOMの変更を反映）
-        setTimeout(resizeCanvas, 100);
-      };
-
-      // 初期向きチェック
-      updateOrientationMessage();
-
-      // 向き変更時のイベント
-      window.addEventListener("orientationchange", updateOrientationMessage);
-
-      // iPhoneなどでのスクロールを防止
-      document.body.addEventListener(
-        "touchmove",
-        function (e) {
-          if (e.touches.length > 1) {
-            e.preventDefault();
+        if (orientationMessage) {
+          if (window.orientation === 90 || window.orientation === -90) {
+            // 横向き
+            orientationMessage.style.display = "flex";
+          } else {
+            // 縦向き
+            orientationMessage.style.display = "none";
           }
-        },
-        { passive: false }
-      );
+        }
+      });
 
       // ページビジビリティの変更を検出（バックグラウンドになった時にポーズ）
       document.addEventListener("visibilitychange", () => {
@@ -1094,7 +1026,52 @@ document.addEventListener("DOMContentLoaded", () => {
           gameState.timeInterval = setInterval(updateTimer, 1000);
         }
       });
+      console.log("イベントリスナー設定完了");
+    }
 
+    // 初期化
+    function init() {
+      console.log("初期化開始");
+
+      setupTouchEvents();
+      setupEventListeners();
+
+      // 魚の画像を事前に読み込む
+      preloadFishImages().then(() => {
+        console.log("魚の画像読み込み完了");
+
+        // ゲーム画面の初期描画
+        drawWaterPattern();
+
+        // テスト用に1匹の魚を表示
+        if (!gameState.isPlaying) {
+          createFish();
+          drawFish();
+        }
+      });
+
+      // モバイルデバイスの向きチェック
+      if (window.orientation !== undefined) {
+        if (window.orientation === 90 || window.orientation === -90) {
+          const orientationMessage = document.getElementById(
+            "orientation-message"
+          );
+          if (orientationMessage) {
+            orientationMessage.style.display = "flex";
+          }
+        }
+      }
+
+      // iPhoneなどでのスクロールを防止
+      document.body.addEventListener(
+        "touchmove",
+        function (e) {
+          if (e.touches.length > 1) {
+            e.preventDefault();
+          }
+        },
+        { passive: false }
+      );
       console.log("初期化完了");
     }
 
