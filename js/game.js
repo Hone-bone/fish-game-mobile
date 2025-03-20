@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
       {
         color: "red",
         speed: 2,
-        size: 30,
+        size: 24,
         points: 10,
         probability: 0.5,
         image: "assets/fish1.svg",
@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
       {
         color: "gold",
         speed: 3,
-        size: 25,
+        size: 20,
         points: 20,
         probability: 0.3,
         image: "assets/fish2.svg",
@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
       {
         color: "blue",
         speed: 4,
-        size: 20,
+        size: 16,
         points: 30,
         probability: 0.15,
         image: "assets/fish3.svg",
@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
       {
         color: "black",
         speed: 5,
-        size: 35,
+        size: 28,
         points: 50,
         probability: 0.05,
         image: "assets/fish4.svg",
@@ -254,7 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 捕獲判定の調整（より捕まえやすくする）
       const isMobile = window.innerWidth <= 480;
-      const baseRadius = isMobile ? 70 : 60;
+      const baseRadius = isMobile ? 56 : 48;
 
       gameState.fish.forEach((fish, index) => {
         // 魚の中心からの距離を計算
