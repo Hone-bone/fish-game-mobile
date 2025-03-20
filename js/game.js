@@ -529,27 +529,70 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // 揺れる動きの計算（揺れ幅を小さくして自然に）
+        let frameOffset =
+          fish.frameCount * fish.wiggleSpeed + fish.wiggleOffset;
+        // 振動が特定の状態で大きくなりすぎないようにする
+        const wiggleScale = Math.min(
+          0.7,
+          Math.abs(Math.sin(frameOffset * 0.1)) + 0.3
+        );
         const wiggle =
-          Math.sin(fish.frameCount * fish.wiggleSpeed + fish.wiggleOffset) *
-          (fish.wiggleAmount * 0.7); // 揺れを小さくする
+          Math.sin(frameOffset) * (fish.wiggleAmount * wiggleScale); // 揺れを動的に調整
 
         // 魚の種類に応じて特別な動き（影響を抑えて安定化）
         let specialMove = 0;
         if (fish.color === "red" || fish.color === "gold") {
           // 赤や金色の魚（金魚）は上下に揺れやすいが、揺れを抑える
-          specialMove = Math.sin(fish.frameCount * 0.02) * 0.1;
+          specialMove = Math.sin(fish.frameCount * 0.02) * 0.08;
           fish.directionY += specialMove;
         } else if (fish.color === "blue") {
           // 青い魚は滑らかな動き
-          specialMove = Math.cos(fish.frameCount * 0.03) * 0.08;
+          specialMove = Math.cos(fish.frameCount * 0.03) * 0.06;
           fish.directionX += specialMove;
         } else if (fish.color === "black") {
           // 黒い魚はジグザグ動き（揺れを小さくして安定化）
-          specialMove = Math.sin(fish.frameCount * 0.05) * 0.15;
+          specialMove = Math.sin(fish.frameCount * 0.04) * 0.1;
           if (fish.frameCount % 30 < 15) {
             fish.directionX += specialMove;
           } else {
             fish.directionY += specialMove;
+          }
+        }
+
+        // 振動検出 - 高速振動している場合
+        if (fish.prevPrevX !== undefined) {
+          const currentPattern = Math.sign(fish.x - fish.prevX);
+          const prevPattern = Math.sign(fish.prevX - fish.prevPrevX);
+
+          // 前回と今回の移動方向が逆で、かつ移動距離が小さい場合は振動している可能性が高い
+          if (
+            currentPattern !== 0 &&
+            prevPattern !== 0 &&
+            currentPattern !== prevPattern &&
+            Math.abs(fish.x - fish.prevX) < 1
+          ) {
+            fish.oscillationCount = (fish.oscillationCount || 0) + 1;
+
+            // 一定回数以上振動が続いたらリセット
+            if (fish.oscillationCount > 3) {
+              // 方向をランダムに変更し、少し移動させる
+              const randomAngle = Math.random() * Math.PI * 2;
+              fish.directionX = Math.cos(randomAngle);
+              fish.directionY = Math.sin(randomAngle);
+              fish.x += fish.directionX * 5; // 少し強制的に移動
+              fish.y += fish.directionY * 5;
+
+              // 新しい目標点を設定
+              fish.targetX =
+                Math.random() * canvas.width * 0.7 + canvas.width * 0.15;
+              fish.targetY =
+                Math.random() * canvas.height * 0.7 + canvas.height * 0.15;
+
+              fish.oscillationCount = 0;
+              fish.stuckFrames = 0;
+            }
+          } else {
+            fish.oscillationCount = 0;
           }
         }
 
@@ -582,21 +625,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 魚が後ろ向きに動こうとする場合、向きを反転させる
         if (isFacingRight !== fish.facingRight) {
-          fish.directionX *= -1;
-          fish.directionY *= -1;
-          fish.facingRight = isFacingRight;
+          // 向きの変更頻度を制限（振動防止）
+          if (
+            !fish.lastDirectionChange ||
+            fish.frameCount - fish.lastDirectionChange > 10
+          ) {
+            fish.directionX *= -1;
+            fish.directionY *= -1;
+            fish.facingRight = isFacingRight;
+            fish.lastDirectionChange = fish.frameCount;
+          }
         }
 
         // 揺れを適用した回転角度を計算（揺れを小さくして安定化）
         fish.rotation =
-          Math.atan2(fish.directionY, fish.directionX) + wiggle * 0.7;
+          Math.atan2(fish.directionY, fish.directionX) + wiggle * 0.5;
 
         // 実際の移動方向を計算（揺れを含める - 影響を小さく）
         const moveAngle =
-          Math.atan2(fish.directionY, fish.directionX) + wiggle * 0.2;
+          Math.atan2(fish.directionY, fish.directionX) + wiggle * 0.15;
         const effectiveSpeed = fish.speed;
         let moveX = Math.cos(moveAngle) * effectiveSpeed;
         let moveY = Math.sin(moveAngle) * effectiveSpeed;
+
+        // 前々回の位置を記録
+        fish.prevPrevX = fish.prevX;
+        fish.prevPrevY = fish.prevY;
+
+        // 前回位置を記録
+        fish.prevX = fish.x;
+        fish.prevY = fish.y;
 
         // 魚の移動（常に前進するように）
         fish.x += Math.abs(moveX) * Math.sign(fish.directionX);
@@ -608,14 +666,15 @@ document.addEventListener("DOMContentLoaded", () => {
           // x方向の反転（徐々に）- より自然な動きに
           fish.directionX *= -0.5; // より強い反転力を適用
           fish.facingRight = !fish.facingRight; // 向きも反転
+          fish.lastDirectionChange = fish.frameCount; // 向き変更タイミングを記録
 
           // ランダムなy方向の変化を加える（より自然に）
           fish.directionY += Math.random() * 0.3 - 0.15;
 
           // 位置の調整（キャンバス内に戻す）
-          if (fish.x < margin) fish.x = margin + 1; // 少し余裕を持たせる
+          if (fish.x < margin) fish.x = margin + 2; // 余裕を持たせる
           if (fish.x > canvas.width - margin)
-            fish.x = canvas.width - margin - 1;
+            fish.x = canvas.width - margin - 2;
         }
 
         if (fish.y <= margin || fish.y >= canvas.height - margin) {
@@ -626,9 +685,9 @@ document.addEventListener("DOMContentLoaded", () => {
           fish.directionX += Math.random() * 0.3 - 0.15;
 
           // 位置の調整（キャンバス内に戻す）
-          if (fish.y < margin) fish.y = margin + 1; // 少し余裕を持たせる
+          if (fish.y < margin) fish.y = margin + 2; // 余裕を持たせる
           if (fish.y > canvas.height - margin)
-            fish.y = canvas.height - margin - 1;
+            fish.y = canvas.height - margin - 2;
         }
 
         // 方向ベクトルを再度正規化（壁での反射後）
@@ -653,8 +712,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
           // 一定フレーム数動かない場合、ランダムな方向に動かす
           if (fish.stuckFrames > 10) {
-            fish.directionX = Math.random() * 2 - 1;
-            fish.directionY = Math.random() * 2 - 1;
+            // より強制的な移動
+            const randomAngle = Math.random() * Math.PI * 2;
+            fish.directionX = Math.cos(randomAngle);
+            fish.directionY = Math.sin(randomAngle);
+            fish.x += fish.directionX * 3; // 少し強制的に移動
+            fish.y += fish.directionY * 3;
             fish.targetX = Math.random() * canvas.width;
             fish.targetY = Math.random() * canvas.height;
             fish.stuckFrames = 0;
@@ -662,10 +725,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           fish.stuckFrames = 0;
         }
-
-        // 前回位置を記録
-        fish.prevX = fish.x;
-        fish.prevY = fish.y;
       });
 
       // 追加: 魚を少しずつ増やす（ゲームが進むにつれて）
