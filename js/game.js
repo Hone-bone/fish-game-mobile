@@ -34,8 +34,35 @@ document.addEventListener("DOMContentLoaded", () => {
     // キャンバスサイズの設定
     function resizeCanvas() {
       const gameArea = document.querySelector(".game-area");
-      canvas.width = gameArea.offsetWidth;
-      canvas.height = gameArea.offsetHeight;
+
+      // ビューポートの寸法を取得
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // アスペクト比を計算して調整（縦長の画面に最適化）
+      const idealAspectRatio = 9 / 16; // 縦長の理想的なアスペクト比
+      const currentAspectRatio = viewportWidth / viewportHeight;
+
+      // ゲームエリアのサイズを計算
+      let calculatedWidth = gameArea.offsetWidth;
+      let calculatedHeight = gameArea.offsetHeight;
+
+      // 横長の画面では高さに合わせて幅を調整
+      if (currentAspectRatio > idealAspectRatio) {
+        calculatedWidth = Math.min(
+          calculatedWidth,
+          gameArea.offsetHeight * idealAspectRatio
+        );
+      }
+
+      // キャンバスのサイズを設定
+      canvas.width = calculatedWidth;
+      canvas.height = calculatedHeight;
+
+      // デバイスピクセル比を適用して高解像度表示に対応
+      const pixelRatio = window.devicePixelRatio || 1;
+      canvas.style.width = `${calculatedWidth}px`;
+      canvas.style.height = `${calculatedHeight}px`;
 
       // 既に魚が描画されていれば再描画する
       if (gameState && gameState.isPlaying) {
@@ -46,7 +73,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 初期画面サイズの設定
     window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+    window.addEventListener("load", resizeCanvas);
+    window.addEventListener("orientationchange", () => {
+      setTimeout(resizeCanvas, 300); // 向き変更後に遅延させてサイズを調整
+    });
+    resizeCanvas(); // 初期化時にも呼び出し
 
     // 音声効果 - 空のダミー関数を用意
     let dummySound = {
@@ -216,11 +247,6 @@ document.addEventListener("DOMContentLoaded", () => {
         catchFish(gameState.lastTouchX, gameState.lastTouchY);
         poiContainer.style.display = "none";
         createSplash(gameState.lastTouchX, gameState.lastTouchY);
-      });
-
-      // スクリーン向きの変更を監視
-      window.addEventListener("orientationchange", () => {
-        setTimeout(resizeCanvas, 300); // 向き変更後に少し遅延させてサイズを調整
       });
 
       console.log("マウスイベント設定完了");
@@ -999,33 +1025,6 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("シェアボタンのイベントリスナーを設定しました");
       }
 
-      // モバイルデバイスの向き変更検出
-      window.addEventListener("orientationchange", () => {
-        const orientationMessage = document.getElementById(
-          "orientation-message"
-        );
-
-        if (orientationMessage) {
-          if (window.orientation === 90 || window.orientation === -90) {
-            // 横向き
-            orientationMessage.style.display = "flex";
-          } else {
-            // 縦向き
-            orientationMessage.style.display = "none";
-          }
-        }
-      });
-
-      // ページビジビリティの変更を検出（バックグラウンドになった時にポーズ）
-      document.addEventListener("visibilitychange", () => {
-        if (document.hidden && gameState.isPlaying) {
-          // 一時停止の処理
-          clearInterval(gameState.timeInterval);
-        } else if (!document.hidden && gameState.isPlaying) {
-          // 再開の処理
-          gameState.timeInterval = setInterval(updateTimer, 1000);
-        }
-      });
       console.log("イベントリスナー設定完了");
     }
 
@@ -1050,17 +1049,34 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
 
-      // モバイルデバイスの向きチェック
-      if (window.orientation !== undefined) {
-        if (window.orientation === 90 || window.orientation === -90) {
-          const orientationMessage = document.getElementById(
-            "orientation-message"
-          );
-          if (orientationMessage) {
-            orientationMessage.style.display = "flex";
-          }
+      // モバイルデバイスの向きチェックと表示調整
+      const updateOrientationMessage = () => {
+        const orientationMessage = document.getElementById(
+          "orientation-message"
+        );
+        if (!orientationMessage) return;
+
+        if (
+          (window.orientation !== undefined &&
+            (window.orientation === 90 || window.orientation === -90)) ||
+          window.innerWidth > window.innerHeight
+        ) {
+          // 横向き
+          orientationMessage.style.display = "flex";
+        } else {
+          // 縦向き
+          orientationMessage.style.display = "none";
         }
-      }
+
+        // 向きに応じてリサイズを実行（遅延させてDOMの変更を反映）
+        setTimeout(resizeCanvas, 100);
+      };
+
+      // 初期向きチェック
+      updateOrientationMessage();
+
+      // 向き変更時のイベント
+      window.addEventListener("orientationchange", updateOrientationMessage);
 
       // iPhoneなどでのスクロールを防止
       document.body.addEventListener(
@@ -1072,6 +1088,18 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         { passive: false }
       );
+
+      // ページビジビリティの変更を検出（バックグラウンドになった時にポーズ）
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && gameState.isPlaying) {
+          // 一時停止の処理
+          clearInterval(gameState.timeInterval);
+        } else if (!document.hidden && gameState.isPlaying) {
+          // 再開の処理
+          gameState.timeInterval = setInterval(updateTimer, 1000);
+        }
+      });
+
       console.log("初期化完了");
     }
 
