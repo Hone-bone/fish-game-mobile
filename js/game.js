@@ -1,5 +1,19 @@
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOM読み込み完了");
+
+  // ゲーム状態
+  let gameState = {
+    isPlaying: false,
+    score: 0,
+    timeRemaining: 60,
+    timeInterval: null,
+    fish: [],
+    lastTouchX: 0,
+    lastTouchY: 0,
+    isTimeWarning: false,
+    devicePixelRatio: window.devicePixelRatio || 1,
+  };
+
   // ゲーム要素の取得
   const canvas = document.getElementById("game-canvas");
   const ctx = canvas.getContext("2d");
@@ -84,19 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
   } catch (err) {
     console.error("サウンド初期化エラー:", err);
   }
-
-  // ゲーム状態
-  let gameState = {
-    isPlaying: false,
-    score: 0,
-    timeRemaining: 60,
-    timeInterval: null,
-    fish: [],
-    lastTouchX: 0,
-    lastTouchY: 0,
-    isTimeWarning: false,
-    devicePixelRatio: window.devicePixelRatio || 1,
-  };
 
   // 魚の種類の定義
   const fishTypes = [
@@ -883,19 +884,6 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     console.log("初期化完了");
   }
-
-  // グローバルにゲーム開始関数を公開
-  window.startGame = startGame;
-  console.log("グローバル関数として startGame を公開しました");
-
-  // HTML要素をグローバルに公開（デバッグ用）
-  window.gameElements = {
-    startButton,
-    restartButton,
-    canvas,
-    gameState,
-  };
-  console.log("デバッグ用に要素をグローバルに公開しました");
 
   // ゲームの初期化
   init();
