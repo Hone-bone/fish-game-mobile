@@ -38,9 +38,15 @@ document.addEventListener("DOMContentLoaded", () => {
       canvas.height = gameArea.offsetHeight;
 
       // 既に魚が描画されていれば再描画する
-      if (gameState && gameState.isPlaying) {
+      if (gameState.isPlaying) {
         drawWaterPattern();
         drawFish();
+      } else {
+        // ゲーム開始前も水槽と魚を描画する
+        drawWaterPattern();
+        if (gameState.fish.length > 0) {
+          drawFish();
+        }
       }
     }
 
@@ -218,10 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
         createSplash(gameState.lastTouchX, gameState.lastTouchY);
       });
 
-      // スクリーン向きの変更を監視
-      window.addEventListener("orientationchange", () => {
-        setTimeout(resizeCanvas, 300); // 向き変更後に少し遅延させてサイズを調整
-      });
+      // スクリーン向きの変更は別のイベントリスナーで処理するため削除
 
       console.log("マウスイベント設定完了");
     }
@@ -357,9 +360,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // スマホ画面サイズに合わせた設定
       const isMobile = window.innerWidth <= 480;
-      const adjustedSize = isMobile
-        ? selectedFishType.size * 0.9
-        : selectedFishType.size;
+      // サイズの調整率を小さくして適切な大きさを維持
+      const adjustedSize = selectedFishType.size;
       const adjustedSpeed = isMobile
         ? selectedFishType.speed * 1.1
         : selectedFishType.speed;
@@ -760,8 +762,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (fish.imageObj && fish.imageObj.complete) {
           try {
             // 魚のサイズに合わせてスケーリング（中心を基準に）
-            const width = fish.size * 3; // サイズを大きくして詳細を見やすく
-            const height = fish.size * 1.5;
+            // サイズを一定にすることで拡大縮小の問題を解消
+            const width = fish.size * 2.5;
+            const height = fish.size * 1.25;
             ctx.drawImage(
               fish.imageObj,
               -width / 2,
@@ -910,6 +913,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // 説明テキストを非表示
       document.querySelector(".instructions").style.display = "none";
 
+      // キャンバスサイズを再設定（スタート時に適切なサイズにするため）
+      resizeCanvas();
+
       console.log("初期魚を生成します");
       // 初期の魚を生成
       for (let i = 0; i < 5; i++) {
@@ -1012,6 +1018,8 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             // 縦向き
             orientationMessage.style.display = "none";
+            // 縦向きに戻ったときにキャンバスサイズを再調整
+            setTimeout(resizeCanvas, 300); // 向き変更後に少し遅延させてサイズを調整
           }
         }
       });
