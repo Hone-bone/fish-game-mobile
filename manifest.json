@@ -4,8 +4,8 @@
   "description": "制限時間内にたくさんの金魚をすくってスコアを競おう！",
   "start_url": "./index.html",
   "display": "fullscreen",
-  "background_color": "#5ea6df",
-  "theme_color": "#5ea6df",
+  "background_color": "#0f3460",
+  "theme_color": "#1a1a2e",
   "orientation": "portrait",
   "icons": [
     {
