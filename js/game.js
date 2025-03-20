@@ -55,48 +55,29 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
 
-      // デバイスピクセル比を取得
+      // キャンバスのサイズを設定
+      canvas.width = calculatedWidth;
+      canvas.height = calculatedHeight;
+
+      // デバイスピクセル比を適用して高解像度表示に対応
       const pixelRatio = window.devicePixelRatio || 1;
-      gameState.devicePixelRatio = pixelRatio; // ゲーム状態に保存して他の関数でも使えるようにする
-
-      // キャンバスのサイズを設定（物理ピクセルを考慮）
-      canvas.width = calculatedWidth * pixelRatio;
-      canvas.height = calculatedHeight * pixelRatio;
-
-      // キャンバスのCSSサイズを設定
       canvas.style.width = `${calculatedWidth}px`;
       canvas.style.height = `${calculatedHeight}px`;
 
-      // スケーリングを補正するためにコンテキストを調整
-      ctx.scale(pixelRatio, pixelRatio);
-
-      console.log(
-        `キャンバスサイズ設定: ${calculatedWidth}x${calculatedHeight}, ピクセル比: ${pixelRatio}`
-      );
-
       // 既に魚が描画されていれば再描画する
-      if (gameState) {
+      if (gameState && gameState.isPlaying) {
         drawWaterPattern();
-        if (gameState.fish && gameState.fish.length > 0) {
-          drawFish();
-        }
+        drawFish();
       }
     }
 
     // 初期画面サイズの設定
-    window.addEventListener("resize", () => {
-      // リサイズイベント後にコンテキストをリセット
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      resizeCanvas();
-    });
+    window.addEventListener("resize", resizeCanvas);
     window.addEventListener("load", resizeCanvas);
     window.addEventListener("orientationchange", () => {
-      // 向き変更後にコンテキストをリセットし、少し遅延させてサイズを調整
-      setTimeout(() => {
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        resizeCanvas();
-      }, 300);
+      setTimeout(resizeCanvas, 300); // 向き変更後に遅延させてサイズを調整
     });
+    resizeCanvas(); // 初期化時にも呼び出し
 
     // 音声効果 - 空のダミー関数を用意
     let dummySound = {
@@ -780,21 +761,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 魚の描画
     function drawFish() {
-      // コンテキストの設定を一時的にリセット
-      ctx.save();
-
-      // 高解像度対応に合わせてスケーリング
-      const pixelRatio = gameState.devicePixelRatio || 1;
-      ctx.scale(pixelRatio, pixelRatio);
-
       gameState.fish.forEach((fish) => {
         // 画面外の魚は描画しない（パフォーマンス向上）
         const margin = fish.size * 3;
         if (
           fish.x < -margin ||
-          fish.x > canvas.width / pixelRatio + margin ||
+          fish.x > canvas.width + margin ||
           fish.y < -margin ||
-          fish.y > canvas.height / pixelRatio + margin
+          fish.y > canvas.height + margin
         ) {
           return;
         }
@@ -834,9 +808,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         ctx.restore();
       });
-
-      // コンテキストの設定を復元
-      ctx.restore();
     }
 
     // フォールバック用の魚の描画関数
@@ -857,30 +828,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 水面のパターン描画
     function drawWaterPattern() {
-      // コンテキストの設定を一時的にリセット
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-
       // 背景色をクリア
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 高解像度対応に合わせてスケーリング
-      const pixelRatio = gameState.devicePixelRatio || 1;
-      ctx.scale(pixelRatio, pixelRatio);
-
       // グラデーション背景を作成（上部から下部へ）
-      const gradient = ctx.createLinearGradient(
-        0,
-        0,
-        0,
-        canvas.height / pixelRatio
-      );
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, "#4a9ad9"); // 上部の色（明るい青）
       gradient.addColorStop(1, "#3d85c6"); // 下部の色（深い青）
 
       // 背景を描画
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width / pixelRatio, canvas.height / pixelRatio);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // 水の揺らぎ効果（波紋）を描画
       ctx.globalAlpha = 0.05; // 非常に透明度を高くして目立たなくする
@@ -895,8 +853,8 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.beginPath();
 
         // 水平方向の波紋
-        for (let x = 0; x < canvas.width / pixelRatio; x += 20) {
-          for (let y = 0; y < canvas.height / pixelRatio; y += 20) {
+        for (let x = 0; x < canvas.width; x += 20) {
+          for (let y = 0; y < canvas.height; y += 20) {
             const waveOffset =
               Math.sin(x * frequency + currentTime * speed) * amplitude;
             const circleSize = 10 + waveOffset * 0.3;
@@ -913,9 +871,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 透明度を元に戻す
       ctx.globalAlpha = 1.0;
-
-      // コンテキストの設定を復元
-      ctx.restore();
     }
 
     // ゲームループ
@@ -1151,8 +1106,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ゲームの初期化
     init();
-    // 初期化時にもキャンバスサイズを設定
-    resizeCanvas();
     console.log(
       "ゲームの初期化が完了しました。スタートボタンをクリックして開始できます。"
     );
