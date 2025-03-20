@@ -26,6 +26,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
     <!-- Hammer.js タッチ操作用 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <!-- エラー処理 -->
+    <script>
+      window.addEventListener("error", function (e) {
+        console.error("ページでエラーが発生しました:", e.message);
+        alert("エラーが発生しました: " + e.message);
+      });
+    </script>
   </head>
   <body>
     <!-- 端末の向き通知 -->
@@ -71,6 +78,22 @@
           <button id="restart-button">もう一度プレイ</button>
           <button id="share-button">結果をシェア</button>
         </div>
+      </div>
+
+      <!-- バックアップ起動ボタン -->
+      <div style="position: fixed; bottom: 10px; right: 10px; z-index: 1000">
+        <button
+          onclick="window.startGame && window.startGame()"
+          style="
+            padding: 10px;
+            background: #ff5555;
+            color: white;
+            border: none;
+            border-radius: 5px;
+          "
+        >
+          緊急ゲーム開始
+        </button>
       </div>
     </div>
 

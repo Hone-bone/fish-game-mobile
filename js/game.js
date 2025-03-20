@@ -16,15 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   console.log("要素取得完了", { startButton, poiElement, canvas });
 
-  // 手動でスタートボタンにクリックイベントを追加（直接バインド）
-  if (startButton) {
-    startButton.onclick = function () {
-      console.log("スタートボタン直接クリック");
-      startGame();
-    };
-    console.log("スタートボタンへの直接イベント設定完了");
-  }
-
   // キャンバスサイズの設定
   function resizeCanvas() {
     const gameArea = document.querySelector(".game-area");
@@ -777,7 +768,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 結果共有
-  function shareResult() {
+  function shareScore() {
     if (navigator.share) {
       navigator
         .share({
@@ -793,26 +784,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // イベントリスナーの設定
+  // イベントリスナーのセットアップ
   function setupEventListeners() {
-    console.log("イベントリスナー設定開始");
+    console.log("イベントリスナーを設定します");
 
-    // 以前のリスナーをすべて削除
-    startButton.removeEventListener("click", startGame);
+    // スタートボタンとリスタートボタンにクリックイベントを追加
+    if (startButton) {
+      startButton.addEventListener("click", function () {
+        console.log("スタートボタンがクリックされました");
+        startGame();
+      });
+      console.log("スタートボタンのイベントリスナーを設定しました");
+    }
 
-    // 新しいリスナーを設定
-    startButton.addEventListener("click", function () {
-      console.log("スタートボタンがクリックされました");
-      startGame();
-    });
-
-    restartButton.addEventListener("click", function () {
-      console.log("リスタートボタンがクリックされました");
-      startGame();
-    });
+    if (restartButton) {
+      restartButton.addEventListener("click", function () {
+        console.log("リスタートボタンがクリックされました");
+        startGame();
+      });
+      console.log("リスタートボタンのイベントリスナーを設定しました");
+    }
 
     if (shareButton) {
-      shareButton.addEventListener("click", shareResult);
+      shareButton.addEventListener("click", shareScore);
+      console.log("シェアボタンのイベントリスナーを設定しました");
     }
 
     // モバイルデバイスの向き変更検出
@@ -846,10 +841,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // 初期化
   function init() {
     console.log("初期化開始");
-
-    // スタートボタンへの直接イベント設定
-    startButton.onclick = startGame;
-    console.log("スタートボタンへ onclick で直接設定");
 
     setupTouchEvents();
     setupEventListeners();
@@ -894,8 +885,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // グローバルにゲーム開始関数を公開
-  window.gameStart = startGame;
+  window.startGame = startGame;
+  console.log("グローバル関数として startGame を公開しました");
+
+  // HTML要素をグローバルに公開（デバッグ用）
+  window.gameElements = {
+    startButton,
+    restartButton,
+    canvas,
+    gameState,
+  };
+  console.log("デバッグ用に要素をグローバルに公開しました");
 
   // ゲームの初期化
   init();
+  console.log(
+    "ゲームの初期化が完了しました。スタートボタンをクリックして開始できます。"
+  );
 });
