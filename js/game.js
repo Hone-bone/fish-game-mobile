@@ -34,8 +34,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // キャンバスサイズの設定
     function resizeCanvas() {
       const gameArea = document.querySelector(".game-area");
-      canvas.width = gameArea.offsetWidth;
-      canvas.height = gameArea.offsetHeight;
+
+      // gameAreaが存在するか確認
+      if (!gameArea) {
+        console.error("ゲームエリア要素が見つかりません");
+        return;
+      }
+
+      // 幅と高さが有効な値であることを確認
+      const width = Math.max(1, gameArea.offsetWidth);
+      const height = Math.max(1, gameArea.offsetHeight);
+
+      canvas.width = width;
+      canvas.height = height;
+
+      console.log(`キャンバスサイズを設定: ${width}x${height}`);
 
       // 既に魚が描画されていれば再描画する
       if (gameState.isPlaying) {
@@ -826,11 +839,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       for (let i = 0; i < particleCount; i++) {
         // 粒子のサイズと位置をランダムに決定
-        const size = 2 + Math.random() * 4;
+        const size = Math.max(1, 2 + Math.random() * 4); // 最小サイズを1に制限
         const x =
-          (Math.sin(currentTime * 0.3 + i * 0.5) * 0.5 + 0.5) * canvas.width;
+          (Math.sin(currentTime * 0.3 + i * 0.5) * 0.5 + 0.5) *
+          Math.max(1, canvas.width);
         const y =
-          (Math.cos(currentTime * 0.2 + i * 0.7) * 0.5 + 0.5) * canvas.height;
+          (Math.cos(currentTime * 0.2 + i * 0.7) * 0.5 + 0.5) *
+          Math.max(1, canvas.height);
 
         // 明るさの調整（時間によって明滅）
         const brightness = 0.5 + 0.5 * Math.sin(currentTime * 2 + i);
@@ -838,34 +853,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // 光の粒子を描画
         ctx.fillStyle = `rgba(255, 255, 255, ${brightness * 0.4})`;
         ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // 光の筋
-      ctx.globalAlpha = 0.05;
-      for (let i = 0; i < 10; i++) {
-        const startX = Math.random() * canvas.width;
-        const startY = 0;
-        const angle = Math.PI / 6 + Math.random() * (Math.PI / 3);
-        const length = canvas.height * 1.5;
-        const width = 20 + Math.random() * 40;
-
-        // 時間経過で動く光の角度
-        const moveAngle = angle + Math.sin(currentTime * 0.2 + i) * 0.2;
-
-        ctx.save();
-        ctx.translate(startX, startY);
-        ctx.rotate(moveAngle);
-
-        // 光のグラデーション
-        const lightGradient = ctx.createLinearGradient(0, 0, 0, length);
-        lightGradient.addColorStop(0, "rgba(255, 255, 255, 0.8)");
-        lightGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
-
-        ctx.fillStyle = lightGradient;
-        ctx.fillRect(-width / 2, 0, width, length);
-        ctx.restore();
+        try {
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fill();
+        } catch (e) {
+          console.error("粒子描画エラー:", e);
+        }
       }
 
       // 水の揺らぎ効果（波紋）を描画
@@ -889,10 +882,18 @@ document.addEventListener("DOMContentLoaded", () => {
               amplitude;
             const combinedOffset = waveOffset1 + waveOffset2;
 
-            const circleSize = 15 + combinedOffset * 0.4;
+            // サイズが0以下にならないように保護
+            const circleSize = Math.max(1, 15 + combinedOffset * 0.4);
 
-            ctx.moveTo(x + circleSize, y);
-            ctx.arc(x, y, circleSize, 0, Math.PI * 2);
+            // circleSize=0の場合はarcを描画しない（エラー防止）
+            if (circleSize > 0) {
+              ctx.moveTo(x + circleSize, y);
+              try {
+                ctx.arc(x, y, circleSize, 0, Math.PI * 2);
+              } catch (e) {
+                console.error("波紋描画エラー:", e);
+              }
+            }
           }
         }
 
