@@ -2,6 +2,10 @@ document.addEventListener("DOMContentLoaded", () => {
   try {
     console.log("DOM読み込み完了");
 
+    // デバイスピクセル比の取得と設定
+    const dpr = window.devicePixelRatio || 1;
+    console.log(`デバイスピクセル比: ${dpr}`);
+
     // ゲーム状態
     let gameState = {
       isPlaying: false,
@@ -12,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
       lastTouchX: 0,
       lastTouchY: 0,
       isTimeWarning: false,
-      devicePixelRatio: window.devicePixelRatio || 1,
+      devicePixelRatio: dpr,
     };
 
     // ゲーム要素の取得
@@ -34,11 +38,27 @@ document.addEventListener("DOMContentLoaded", () => {
     // キャンバスサイズの設定
     function resizeCanvas() {
       const gameArea = document.querySelector(".game-area");
-      canvas.width = gameArea.offsetWidth;
-      canvas.height = gameArea.offsetHeight;
+      const displayWidth = gameArea.offsetWidth;
+      const displayHeight = gameArea.offsetHeight;
+      const dpr = gameState.devicePixelRatio;
 
-      // 既に魚が描画されていれば再描画する
-      if (gameState && gameState.isPlaying) {
+      // キャンバスの論理サイズを設定
+      canvas.style.width = `${displayWidth}px`;
+      canvas.style.height = `${displayHeight}px`;
+
+      // キャンバスのバッファサイズをデバイスピクセル比に合わせて調整
+      canvas.width = Math.floor(displayWidth * dpr);
+      canvas.height = Math.floor(displayHeight * dpr);
+
+      // コンテキストのスケーリング
+      ctx.scale(dpr, dpr);
+
+      console.log(
+        `キャンバスサイズを調整: 表示=${displayWidth}x${displayHeight}, 実際=${canvas.width}x${canvas.height}, DPR=${dpr}`
+      );
+
+      // 魚が表示されている場合は常に再描画する
+      if (gameState && gameState.fish && gameState.fish.length > 0) {
         drawWaterPattern();
         drawFish();
       }
@@ -220,7 +240,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // スクリーン向きの変更を監視
       window.addEventListener("orientationchange", () => {
-        setTimeout(resizeCanvas, 300); // 向き変更後に少し遅延させてサイズを調整
+        setTimeout(() => {
+          console.log(
+            "画面の向きが変更されました - キャンバスをリサイズします"
+          );
+          resizeCanvas();
+          // 明示的に再描画
+          if (gameState && gameState.fish && gameState.fish.length > 0) {
+            drawWaterPattern();
+            drawFish();
+          }
+        }, 300); // 向き変更後に少し遅延させてサイズを調整
       });
 
       console.log("マウスイベント設定完了");
@@ -457,6 +487,12 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       gameState.fish.push(fish);
+
+      // 魚が生成されたら明示的に再描画
+      if (!gameState.isPlaying) {
+        drawWaterPattern();
+        drawFish();
+      }
     }
 
     // 魚の更新
